@@ -31,6 +31,7 @@
     <a href="#contracts">Contracts</a>
     <a href="#volt">Volt</a>
     <a href="#network">Node</a>
+    <a href="#wallet">Wallet</a>
     <a href="#explorer">Explorer</a>
     <a class="ghost" href="DeckxCoin-Whitepaper.pdf">Whitepaper ↓</a>
     <a class="ghost" href="https://github.com/xyb3rpunq/deckxcoin" rel="noopener">GitHub ↗</a>
@@ -743,10 +744,79 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
   </div>
 </section>
 
+<!-- ═══════════════════════════════════════════════════ WALLET ══ -->
+<section id="wallet" class="section">
+  <div class="section-head">
+    <span class="section-index">10</span>
+    <h2>The wallet</h2>
+    <p class="section-sub">
+      BIP-39 words, BIP-32 derivation, and the four things a wallet has to get right — one of which
+      has cost people more money than every consensus bug combined.
+    </p>
+  </div>
+
+  <div class="cards four compact">
+    <div class="mini"><span class="mini-k">seed</span><span class="mini-v">24 words</span></div>
+    <div class="mini"><span class="mini-k">path</span><span class="mini-v">m/84'/9333'</span></div>
+    <div class="mini"><span class="mini-k">gap limit</span><span class="mini-v">20</span></div>
+    <div class="mini"><span class="mini-k">tests</span><span class="mini-v">30</span></div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="spec">
+      <thead><tr><th>Concern</th><th>Approach</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>A seed a human can write down</td>
+          <td>24 BIP-39 words with a checksum. The checksum is the point: without it a single mistyped word silently opens a <em>different</em> wallet, and the mistake is invisible until the funds fail to appear.</td>
+        </tr>
+        <tr>
+          <td>Many addresses, one backup</td>
+          <td>BIP-32 derivation at <code>m/84'/9333'/account'/change/index</code>. The coin type is the P2P port rather than a SLIP-44 registration — claiming a registered number for a chain with no network would be squatting.</td>
+        </tr>
+        <tr>
+          <td>Finding the coins again</td>
+          <td>Gap-limit discovery over both the receive and change branches. A wallet that stopped at the first empty address would miss funds sent to a gap, which happens routinely because addresses are handed out faster than they are paid.</td>
+        </tr>
+        <tr>
+          <td>Not losing the change</td>
+          <td>The most expensive wallet bug in history is a change output sent nowhere. Change goes to a derived address of the same wallet, never reused, and the amount is checked before signing. Change below the dust threshold becomes fee rather than an output nobody can afford to spend.</td>
+        </tr>
+        <tr>
+          <td>Building valid transactions</td>
+          <td>Every transaction is dry-run through the chain's own validator before being returned. A wallet that hands you something the network will reject has done nothing useful.</td>
+        </tr>
+        <tr>
+          <td>Address rotation</td>
+          <td>A fresh address per payment. Reusing one links every payment you have ever received, and rotation is the single largest privacy improvement available to a wallet.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warn-box">
+    <p>
+      <strong>No encrypted keystore.</strong> Keys live in memory for the life of the process and
+      reach disk only on an explicit export. A production wallet would encrypt at rest behind a
+      passphrase. That is a real gap, and it is listed as one rather than glossed over.
+    </p>
+  </div>
+
+  <div class="prose">
+    <h3>Recovery, tested properly</h3>
+    <p>
+      The recovery test does not check that a function returns the right value. It funds a wallet,
+      spends from it so there is change on the second branch, then <strong>throws the wallet away
+      entirely</strong> and rebuilds it from the twenty-four words — asserting it finds every coin,
+      including the change, and can spend them again.
+    </p>
+  </div>
+</section>
+
 <!-- ═══════════════════════════════════════════════════ EXPLORER ══ -->
 <section id="explorer" class="section alt">
   <div class="section-head">
-    <span class="section-index">10</span>
+    <span class="section-index">11</span>
     <h2>Live chain explorer</h2>
     <p class="section-sub">
       Every value below was produced by <code>chain/scripts/export-web-data.ts</code> running the real
@@ -780,7 +850,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 <!-- ═══════════════════════════════════════════════════ PARAMS ══ -->
 <section id="params" class="section">
   <div class="section-head">
-    <span class="section-index">11</span>
+    <span class="section-index">12</span>
     <h2>Consensus parameters</h2>
     <p class="section-sub">Everything a second implementation would need to agree with this one.</p>
   </div>
@@ -812,7 +882,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 <!-- ═══════════════════════════════════════════════════ RUN ══ -->
 <section id="run" class="section">
   <div class="section-head">
-    <span class="section-index">12</span>
+    <span class="section-index">13</span>
     <h2>Run it yourself</h2>
     <p class="section-sub">Node 22.18+ (native TypeScript type stripping). No build step, no bundler, three dependencies.</p>
   </div>
@@ -849,7 +919,7 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
 <!-- ═══════════════════════════════════════════════════ AUDIT ══ -->
 <section id="audit" class="section alt">
   <div class="section-head">
-    <span class="section-index">13</span>
+    <span class="section-index">14</span>
     <h2>Honest limitations</h2>
     <p class="section-sub">What this is not. Read this before you put anything of value near it.</p>
   </div>
