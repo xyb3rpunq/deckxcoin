@@ -202,8 +202,9 @@ export class VoltChannel {
     const ownerBalance = holder === 'a' ? this.balanceA : this.balanceB;
     const otherBalance = holder === 'a' ? this.balanceB : this.balanceA;
 
+    // Compressed points on both sides — see the note on `revocationPubkey`.
     const revKey = revocationPubkey(
-      toHex(other.revocationBase.publicKey),
+      toHex(other.revocationBase.point),
       owner.secrets.point(commitmentNumber),
     );
 

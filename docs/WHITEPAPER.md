@@ -100,13 +100,53 @@ the Bitcoin whitepaper.
 ### 2.1 Transactions
 
 A coin is a chain of digital signatures (§2). Each input references a previous output by
-`(txid, index)` and carries a secp256k1 ECDSA signature over a digest committing to the entire
+`(txid, index)` and carries a **BIP-340 Schnorr** signature over a digest committing to the entire
 transaction plus the *value and address of the output being spent*.
 
 That last clause follows BIP-143's correction. Without it, a signing device can be induced to
 authorise a larger output than it was shown, because the signature does not commit to what it
 spends. Serialising the transaction body once rather than once per input additionally avoids the
 quadratic hashing behaviour of Bitcoin's original signature hash.
+
+### 2.1.1 Why Schnorr, not ECDSA
+
+Every signature on this chain is a 64-byte BIP-340 Schnorr signature over a 32-byte x-only public
+key. ECDSA is not supported at all — not deprecated, absent. Four reasons, in the order they
+mattered:
+
+**Batch verification.** Schnorr signatures are linear, so `n` of them verify in roughly the cost of
+`n/2` individually. Initial block download is dominated by signature checking, and this is the
+largest available win that does not change the consensus rules.
+
+**Provable security.** BIP-340 has a security proof under the discrete logarithm assumption.
+ECDSA's does not exist without additional assumptions, and its history of nonce-reuse catastrophes
+is not an accident of implementation.
+
+**Non-malleability by construction.** ECDSA needs a low-`s` rule bolted on to stop `(r, s)` and
+`(r, n − s)` both verifying. Schnorr signatures are unique for a given key and message.
+
+**One code path.** Supporting both would mean every verifier branches on a scheme selector, and
+every such branch is somewhere a check can be skipped. Bitcoin carries both because it had to; a
+chain designed today does not.
+
+The cost is that public keys become x-only: a key commits to an x-coordinate and the y-coordinate is
+implicitly the even one. Wherever a *point* is needed rather than a key — Diffie-Hellman inside the
+onion, the revocation-key homomorphism — the implementation uses compressed 33-byte points
+explicitly. Conflating the two encodings is the one real hazard the scheme introduces, and it is not
+hypothetical: an early revision lifted an x-only key to its even-y point inside the revocation
+derivation, which silently broke the identity for the half of all keys whose point has odd y. The
+function names now state which encoding they take, the derivation rejects the wrong one outright,
+and a test exercises twenty independent parities.
+
+Signing is deterministic: no auxiliary randomness is supplied, so the same key and digest always
+produce the same signature. BIP-340 permits this, and it is what makes the genesis block and every
+test vector reproducible on any machine.
+
+Implementation is `@noble/curves`, the audited reference. Hand-rolling BIP-340 for a project that
+talks about security would be the wrong call, however short the specification looks. Correctness is
+demonstrated against the **official BIP-340 test vectors** — all fifteen, including the ten
+adversarial cases: a public key off the curve, an `R` with odd y, an `s` at the group order, an `x`
+at the field size.
 
 ### 2.2 Non-malleable identifiers
 
@@ -341,6 +381,53 @@ contract whose author has found no caveats has not looked hard enough.
 Volt implements the Poon–Dryja construction over DeckxCoin's script types. A channel costs two
 on-chain transactions regardless of whether the parties exchange three payments or three million.
 
+### 6.0 Encrypted transport
+
+Node-to-node traffic is encrypted and authenticated. Plaintext frames let anyone on the path — a
+router, an ISP, a hosting provider — observe which transactions originate at which node, which is a
+deanonymisation oracle given away for free. Bitcoin closed the same hole with BIP-324.
+
+Each side sends an ephemeral compressed public key in the clear; ECDH over those keys, expanded
+through HKDF-SHA256, yields one AEAD key and one length-cipher key per direction plus a session
+identifier. The salt binds the derivation to the network, so a testnet handshake can never produce
+mainnet keys. Direction is decided by sorting the two ephemeral keys, which removes a round trip.
+Every frame is an encrypted 3-byte length followed by ChaCha20-Poly1305 ciphertext, with the
+encrypted length authenticated as associated data. Keys ratchet forward every 4,096 frames.
+
+The length is encrypted because message sizes are a fingerprint: a 1,366-byte payload is an onion, a
+24-byte one is a handshake acknowledgement.
+
+Two limitations, stated rather than implied away. There is no ElligatorSwift encoding, so the
+handshake bytes remain recognisable as curve points to an observer performing traffic
+classification — this defends confidentiality, not censorship-resistance. And the ephemeral key is
+not bound to any long-term identity, so an active adversary who can intercept and relay is not
+stopped. Bitcoin has the same property: encryption raises the cost of passive surveillance
+enormously and does nothing about an active attacker already on the path.
+
+### 6.0.1 Watchtowers
+
+A penalty transaction only punishes a cheat if somebody broadcasts it, which makes a channel safe
+only while its owner is online. A watchtower removes that liveness requirement, and the naive design
+removes it by learning the user's entire payment graph — a worse leak than the risk it addresses.
+
+Instead each update registers a blob keyed by a hint: the first 16 bytes of the commitment
+transaction identifier are the lookup key, the last 16 bytes are the decryption key. The tower
+stores the first half and can neither read the blob nor tell which channel it guards. When the
+commitment appears on-chain the tower sees the full identifier, derives the key from the half it now
+knows, decrypts, and broadcasts.
+
+The penalty's fee is fixed at the moment the blob is sealed, because the transaction is signed then.
+A fee spike between sealing and breach could leave the penalty unconfirmable, and an unconfirmable
+penalty is no penalty. The client therefore seals the same penalty at several fee levels — a
+ladder — and the tower starts at the cheapest rung and climbs each time a broadcast fails or a
+penalty goes unconfirmed. Rungs whose fee would exceed the swept value are never sealed.
+
+Blobs are persisted. A tower that forgets them on restart protects a channel until the first reboot,
+which is worse than not existing, because the user believes they are covered.
+
+Still missing: no reward mechanism, so nobody is paid to run one, and no accountability — a tower
+that quietly does nothing is indistinguishable from one that works, right until it matters.
+
 ### 6.1 Channel mechanics
 
 Funding is a 2-of-2 output requiring both parties to sign an identical digest. Each party then holds
@@ -487,7 +574,7 @@ Roughly 5,800 lines of TypeScript, running directly on Node 22.18 or later via n
 the functionality because the source carries its reasoning inline; the comments are the design
 record, not decoration.
 
-The test suite is the specification. One hundred and ten tests cover primitives, consensus, the
+The test suite is the specification. One hundred and eighty-nine tests cover primitives, consensus, the
 virtual machine, the covenant library, and the channel layer. Assertions run against the real
 validator; where a component could be tested against a mock, it deliberately is not.
 
@@ -505,8 +592,8 @@ no figure on it is illustrative.
 ## 9. Limitations
 
 Stated once, without hedging. There is no peer-to-peer layer, no persistence beyond an in-memory
-snapshot, no wallet or hierarchical key derivation, and no production miner. Signatures are ECDSA
-rather than Schnorr, forgoing batch verification. Gas reservations are not refunded — the excess
+snapshot, no wallet or hierarchical key derivation, and no production miner. Batch signature verification has an
+interface but no batch primitive behind it. Gas reservations are not refunded — the excess
 becomes a miner tip, because a refund output would change the transaction shape. Volt lacks
 watchtowers, splicing, multi-part payments, and route hints.
 

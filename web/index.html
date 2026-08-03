@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckxCoin — REKT protocol · Bitcoin UTXO + Ethereum contracts + Volt channels</title>
-<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 146 passing tests.">
+<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 189 passing tests.">
 <meta name="theme-color" content="#05060a">
 <meta property="og:title" content="DeckxCoin — REKT protocol">
 <meta property="og:description" content="Bitcoin's UTXO layer, Ethereum's contract layer, Lightning's channel layer. One chain. Mined genesis, not hardcoded.">
@@ -48,14 +48,14 @@
     <p class="lede">
       Every chain you have been rugged by started with a whitepaper you did not read.
       This one ships <strong>the whitepaper, the chain, and the tests together</strong> — a genesis
-      block that was <strong>mined, not hard-coded</strong>, 146 tests that fail loudly when the
+      block that was <strong>mined, not hard-coded</strong>, 189 tests that fail loudly when the
       cryptography is wrong, and source that carries its reasoning inline.
     </p>
 
     <div class="hero-stats" id="hero-stats">
       <div class="stat"><span class="stat-label">genesis hash</span><span class="stat-value mono" data-bind="genesis.hash.short">—</span></div>
       <div class="stat"><span class="stat-label">proof of work</span><span class="stat-value mono" data-bind="genesis.attempts">—</span></div>
-      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">146 / 146</span></div>
+      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">189 / 189</span></div>
       <div class="stat"><span class="stat-label">supply audit</span><span class="stat-value mono ok" data-bind="supply.status">—</span></div>
     </div>
 
@@ -140,7 +140,7 @@
         <tr>
           <td>2</td>
           <td>A coin is a chain of digital signatures; each owner signs a hash of the previous transaction and the next owner's public key.</td>
-          <td class="keep">Kept verbatim. secp256k1 ECDSA, one signature per input, digest commits to the prevout's value and address.</td>
+          <td class="keep">Kept in shape, upgraded in scheme: <strong>BIP-340 Schnorr</strong> rather than ECDSA. One signature per input; the digest commits to the prevout's value and address.</td>
           <td><code>src/tx.ts</code> · <code>sighash()</code></td>
         </tr>
         <tr>
@@ -564,9 +564,9 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
         <tr><td>Sphinx onion routing</td><td>BOLT 4</td><td>1366-byte constant-size packet, 20 hop slots, ephemeral-key blinding chain, deterministic filler, per-hop HMAC.</td><td class="done">implemented</td></tr>
         <tr><td>Invoices</td><td>BOLT 11</td><td>bech32m <code>lnvolt1…</code>, signed by the payee, with amount, payment hash, expiry and min-final-CLTV.</td><td class="done">implemented</td></tr>
         <tr><td>Pathfinding</td><td>—</td><td>Reverse Dijkstra with amount-dependent fees and a time-lock risk factor; returns ranked alternatives because balances are private.</td><td class="done">implemented</td></tr>
-        <tr><td>PTLCs (point time-locks)</td><td>draft</td><td>Every channel already carries the adaptor point (<code>pointFromSecret</code>); settlement still uses hash locks.</td><td class="partial">scaffolded</td></tr>
+        <tr><td>PTLCs (point time-locks)</td><td>draft</td><td>Every channel already carries the adaptor point, and signatures are now BIP-340 Schnorr — the scheme adaptor signatures require. Settlement still uses hash locks.</td><td class="partial">scaffolded</td></tr>
         <tr><td>Splicing</td><td>BOLT 2</td><td>Resizing a channel without closing it.</td><td class="todo">not implemented</td></tr>
-        <tr><td>Watchtowers</td><td>—</td><td>The penalty path exists and is tested, but it must be triggered by a party that is online.</td><td class="todo">not implemented</td></tr>
+        <tr><td>Watchtowers</td><td>BOLT 13 draft</td><td>Blobs encrypted with the second half of the commitment txid and keyed by the first half, so the tower cannot read what it stores or tell which channel it guards. Fee ladders with escalation; persisted to SQLite.</td><td class="done">implemented</td></tr>
         <tr><td>Route hints / private channels</td><td>BOLT 11</td><td>Payers that cannot find a public path simply fail.</td><td class="todo">not implemented</td></tr>
       </tbody>
     </table>
@@ -667,6 +667,14 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
         <tr>
           <td>Orphans</td>
           <td>Blocks arriving before their parent are held — bounded to 100, because an unbounded orphan pool is a free memory-exhaustion attack — and connected once the gap fills.</td>
+        </tr>
+        <tr>
+          <td>Wire encryption</td>
+          <td>Ephemeral ECDH, then ChaCha20-Poly1305 per frame. Plaintext frames let anyone on the path see which transactions originate at which node — a deanonymisation oracle given away for free. The <em>length prefix is encrypted too</em>, because message sizes are a fingerprint: 1366 bytes is an onion, 24 bytes is a handshake acknowledgement. Keys ratchet forward every 4096 frames.</td>
+        </tr>
+        <tr>
+          <td>What encryption does not fix</td>
+          <td>No ElligatorSwift, so the handshake bytes stay recognisable as curve points to traffic classification — that defends confidentiality, not censorship-resistance. And the ephemeral key is bound to no long-term identity, so an active attacker already on the path is not stopped. Bitcoin has the same property.</td>
         </tr>
         <tr>
           <td>Ban scoring</td>
@@ -787,7 +795,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
         <tr><td>Max block transactions</td><td><code>4096</code></td><td>Plus a 30 000 000 block gas ceiling</td></tr>
         <tr><td>Future drift limit</td><td><code>2 hours</code></td><td>Blocks must also exceed the median time of the last 11</td></tr>
         <tr><td>Address format</td><td><code>bech32m</code>, HRP <code>dxc</code></td><td>Version 0 = key, version 1 = contract</td></tr>
-        <tr><td>Signature scheme</td><td><code>secp256k1 ECDSA</code></td><td>64-byte compact, low-s enforced by the library</td></tr>
+        <tr><td>Signature scheme</td><td><code>BIP-340 Schnorr</code></td><td>64-byte signatures over 32-byte x-only keys. Verified against the 15 official BIP-340 vectors, including all 10 adversarial rejections</td></tr>
         <tr><td>Transaction id</td><td>tagged double-SHA256</td><td>Excludes all witness data — non-malleable from genesis</td></tr>
         <tr><td>Channel CSV delay</td><td><code>144 blocks</code></td><td>≈ 1 day</td></tr>
         <tr><td>Channel dust limit</td><td><code>546 zaps</code></td><td>Outputs below this are dropped, per BOLT 3</td></tr>
@@ -811,7 +819,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 cd deckxcoin/chain
 npm install
 
-npm test              <span class="c"># 146 tests — crypto, consensus, VM, covenants, Volt, P2P</span>
+npm test              <span class="c"># 189 tests — crypto, consensus, VM, covenants, Volt, P2P</span>
 node src/cli.ts genesis    <span class="c"># mine and verify the genesis block</span>
 node src/cli.ts verify     <span class="c"># prove genesis is reproducible</span>
 node src/cli.ts volt       <span class="c"># routed off-chain payment across two channels</span>
@@ -853,7 +861,7 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
         <tr><td>P2P networking</td><td class="todo">absent</td><td>No gossip, no peer discovery, no mempool relay. The chain is a library; there is no daemon.</td></tr>
         <tr><td>Reorg handling</td><td class="partial">partial</td><td>Chainwork is tracked and fork choice is defined, but there is no orphan pool and no state rollback across a reorg.</td></tr>
         <tr><td>Persistence</td><td class="todo">absent</td><td>State lives in memory. There is a snapshot/restore path but no on-disk database.</td></tr>
-        <tr><td>Signature scheme</td><td class="partial">ECDSA</td><td>Schnorr / BIP-340 would give batch verification and cheaper multisig. Not implemented.</td></tr>
+        <tr><td>Signature scheme</td><td class="done">implemented</td><td>BIP-340 Schnorr. Batch verification has an interface but loops internally — the underlying library exposes no batch primitive.</td></tr>
         <tr><td>Mining</td><td class="partial">reference only</td><td>Single-threaded, no work distribution, no stratum. It exists to prove the header is honest, not to compete.</td></tr>
         <tr><td>Gas refunds</td><td class="partial">simplified</td><td>The fee must cover <code>gasUsed × gasPrice</code>; unused reservation becomes a miner tip rather than being refunded to a change output.</td></tr>
         <tr><td>Volt watchtowers</td><td class="todo">absent</td><td>The penalty transaction is implemented and tested, but somebody has to be online to broadcast it.</td></tr>

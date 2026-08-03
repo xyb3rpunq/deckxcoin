@@ -26,6 +26,9 @@ import { signTx, transferTx, txid, ZAPS_PER_DECKX } from '../src/tx.ts';
 import { COINBASE_MATURITY } from '../src/state.ts';
 import { blockHash } from '../src/block.ts';
 import { decodeMessage, encodeMessage, MSG, PROTOCOL_VERSION } from '../src/net/wire.ts';
+import { Handshake, HANDSHAKE_BYTES } from '../src/net/transport.ts';
+import { keyFromSeed } from '../src/crypto.ts';
+import { Socket } from 'node:net';
 
 /* ─────────────────────────────────────────────────────────── harness ── */
 
@@ -146,6 +149,44 @@ test('two nodes connect and complete the handshake', async () => {
 
   const [peerOfA] = a.net.readyPeers;
   assert.equal(peerOfA.outbound, false, 'a accepted the connection');
+
+  // The channel is encrypted, and both ends agree on which session they are in.
+  assert.equal(peerOfA.encrypted, true);
+  assert.equal(peerOfB.encrypted, true);
+  assert.equal(peerOfA.sessionId, peerOfB.sessionId, 'both ends derived the same session');
+  assert.equal(peerOfA.sessionId.length, 64);
+});
+
+test('nothing readable crosses the wire — a passive observer sees ciphertext', async () => {
+  const a = await spawnNode();
+
+  // Connect a raw socket and capture the bytes a real peer would send.
+  const captured: Buffer[] = [];
+  const socket = new Socket();
+  await new Promise<void>((resolve) => socket.connect(a.net.listenPort, '127.0.0.1', resolve));
+  socket.on('data', (chunk) => captured.push(chunk));
+
+  // Send a valid ephemeral key so the node completes its side and speaks.
+  const handshake = new Handshake(REGTEST.name, keyFromSeed('net/observer'));
+  socket.write(handshake.greeting());
+
+  await until(() => captured.length >= 2, 'node responds with a handshake and a frame', 6000);
+  socket.destroy();
+
+  const all = Buffer.concat(captured);
+  // The first 33 bytes are the node's ephemeral key, necessarily in the clear.
+  assert.equal(all.length > HANDSHAKE_BYTES, true, 'the node sent more than its greeting');
+  const afterHandshake = all.subarray(HANDSHAKE_BYTES);
+  const asText = afterHandshake.toString('latin1');
+
+  // A plaintext `version` message would carry all of these.
+  for (const marker of ['version', 'deckxd-test', 'regtest', a.chain.headerAt(0)!.hash]) {
+    assert.equal(
+      asText.includes(marker),
+      false,
+      `'${marker}' must not be readable on the wire`,
+    );
+  }
 });
 
 test('a node discovers a third peer through address gossip', async () => {

@@ -33,6 +33,7 @@ import {
   type VersionPayload,
   type WireMessage,
 } from './wire.ts';
+import { Cipher, Handshake, HANDSHAKE_BYTES } from './transport.ts';
 import { BAN_THRESHOLD, PEER_TIMEOUT, PING_INTERVAL, type NetworkParams } from '../params.ts';
 import type { Hex } from '../crypto.ts';
 
@@ -76,6 +77,9 @@ export interface PeerInfo {
   readonly bytesSent: number;
   readonly bytesReceived: number;
   readonly lastMessageAt: number;
+  readonly encrypted: boolean;
+  /** Session identifier. Safe to log — it is derived material, not a key. */
+  readonly sessionId: string;
 }
 
 export class Peer extends EventEmitter {
@@ -105,12 +109,19 @@ export class Peer extends EventEmitter {
   #lastPingNonce?: string;
   readonly #opts: PeerOptions;
 
+  /* --- encrypted transport ------------------------------------------- */
+  readonly #handshake: Handshake;
+  #cipher?: Cipher;
+  /** Session identifier, available once the key exchange completes. */
+  sessionId = '';
+
   constructor(opts: PeerOptions) {
     super();
     this.#opts = opts;
     this.params = opts.params;
     this.socket = opts.socket;
     this.outbound = opts.outbound;
+    this.#handshake = new Handshake(opts.params.name);
 
     opts.ourNonces.add(this.nonce);
 
@@ -118,6 +129,11 @@ export class Peer extends EventEmitter {
     this.socket.on('error', (err) => this.emit('error', err));
     this.socket.on('close', () => this.#onClose());
     this.socket.setNoDelay(true);
+  }
+
+  /** True once the key exchange has completed and traffic is encrypted. */
+  get encrypted(): boolean {
+    return this.#cipher !== undefined;
   }
 
   get id(): string {
@@ -154,15 +170,30 @@ export class Peer extends EventEmitter {
       bytesSent: this.bytesSent,
       bytesReceived: this.bytesReceived,
       lastMessageAt: this.lastMessageAt,
+      encrypted: this.encrypted,
+      sessionId: this.sessionId,
     };
   }
 
   /* ──────────────────────────────────────────────────────── handshake ── */
 
-  /** Send our `version`. Called once, as soon as the socket is usable. */
+  /**
+   * Begin the connection.
+   *
+   * The very first bytes on the wire are our ephemeral public key, sent in the
+   * clear — there is no key to encrypt it with yet. Everything after that,
+   * including `version`, travels inside the encrypted channel.
+   */
   start(): void {
-    if (this.#sentVersion) return;
+    if (this.state !== PEER_STATE.CONNECTING) return;
     this.state = PEER_STATE.HANDSHAKING;
+    this.socket.write(this.#handshake.greeting());
+    this.bytesSent += HANDSHAKE_BYTES;
+  }
+
+  /** Send our `version`, once the channel is encrypted. */
+  #sendVersion(): void {
+    if (this.#sentVersion) return;
     this.#sentVersion = true;
 
     const payload: VersionPayload = {
@@ -232,8 +263,14 @@ export class Peer extends EventEmitter {
 
   send(command: string, payload?: unknown): void {
     if (this.socket.destroyed) return;
+    if (!this.#cipher) {
+      // Nothing may be sent before the key exchange completes. Silently
+      // dropping would hide a protocol bug; this surfaces it.
+      this.emit('error', new Error(`send('${command}') before the channel was encrypted`));
+      return;
+    }
     try {
-      const frame = encodeMessage(this.params.magic, command, payload);
+      const frame = this.#cipher.seal(encodeMessage(this.params.magic, command, payload));
       this.bytesSent += frame.length;
       this.socket.write(frame);
     } catch (err) {
@@ -250,15 +287,42 @@ export class Peer extends EventEmitter {
     merged.set(chunk, this.#buffer.length);
     this.#buffer = merged;
 
-    // Drain every complete frame currently buffered.
+    // The first HANDSHAKE_BYTES are the peer's ephemeral key, in the clear.
+    if (!this.#cipher) {
+      if (this.#buffer.length < HANDSHAKE_BYTES) return;
+      const greeting = this.#buffer.subarray(0, HANDSHAKE_BYTES);
+      this.#buffer = this.#buffer.subarray(HANDSHAKE_BYTES);
+      try {
+        const result = this.#handshake.accept(greeting);
+        this.#cipher = result.cipher;
+        this.sessionId = result.cipher.sessionId;
+      } catch (err) {
+        this.disconnect(`key exchange failed: ${(err as Error).message}`);
+        return;
+      }
+      this.emit('encrypted', this);
+      this.#sendVersion();
+    }
+
+    // Drain every complete encrypted frame currently buffered.
     for (;;) {
-      const result = decodeMessage(this.params.magic, this.#buffer);
+      const opened = this.#cipher.open(this.#buffer);
+      if (opened.error) {
+        this.misbehave(100, opened.error);
+        return;
+      }
+      if (opened.consumed === 0 || !opened.payload) return;
+      this.#buffer = this.#buffer.subarray(opened.consumed);
+
+      const result = decodeMessage(this.params.magic, opened.payload);
       if (result.error) {
         this.misbehave(100, result.error);
         return;
       }
-      if (result.consumed === 0 || !result.message) return;
-      this.#buffer = this.#buffer.subarray(result.consumed);
+      if (!result.message) {
+        this.misbehave(100, 'authenticated frame did not contain a complete message');
+        return;
+      }
       this.#dispatch(result.message);
       if (this.state === PEER_STATE.CLOSED) return;
     }

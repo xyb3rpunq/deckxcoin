@@ -78,7 +78,7 @@ export function paymentSecretFromSeed(seed: string): PaymentSecret {
 
 /* --------------------------------------------------------------- encoding */
 
-const BODY_SIZE = 1 + 8 + 8 + 4 + 4 + 32 + 33 + 32; // 122
+const BODY_SIZE = 1 + 8 + 8 + 4 + 4 + 32 + 32 + 32; // 121 — payee is x-only
 
 function encodeBody(inv: Omit<Invoice, 'signature'>): Uint8Array {
   return concat(
@@ -102,8 +102,8 @@ function decodeBody(b: Uint8Array): Omit<Invoice, 'signature'> {
     expirySeconds: Number(beToBigInt(b.subarray(17, 21))),
     minFinalCltv: Number(beToBigInt(b.subarray(21, 25))),
     paymentHash: toHex(b.subarray(25, 57)),
-    payee: toHex(b.subarray(57, 90)),
-    descriptionHash: toHex(b.subarray(90, 122)),
+    payee: toHex(b.subarray(57, 89)),
+    descriptionHash: toHex(b.subarray(89, 121)),
   };
 }
 

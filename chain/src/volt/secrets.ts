@@ -45,6 +45,7 @@ import {
   scalarCombine,
   taggedHash,
   toHex,
+  toXOnly,
   utf8,
   type Hex,
 } from '../crypto.ts';
@@ -101,6 +102,15 @@ const h2 = (revocationBasepoint: Uint8Array, perCommitmentPoint: Uint8Array): bi
 /**
  * Public revocation key for one commitment. Computable by both parties from
  * public data — the owner needs it to build its own `to_local` output.
+ *
+ * Both inputs are **compressed 33-byte points**, not x-only keys. The parity
+ * matters here: the scalar side of the identity multiplies the real secrets,
+ * so the point side must multiply the real points. Passing an x-only key would
+ * silently lift it to the even-y branch and break the identity for every key
+ * whose point has odd y — half of them.
+ *
+ * The *result* is returned x-only, because it goes into a `revocable` output
+ * as a signing key and is compared against a transaction's pubkey field.
  */
 export function revocationPubkey(
   revocationBasepoint: Hex,
@@ -108,7 +118,10 @@ export function revocationPubkey(
 ): Hex {
   const base = fromHex(revocationBasepoint);
   const point = fromHex(perCommitmentPoint);
-  return toHex(pointCombine(base, h1(base, point), point, h2(base, point)));
+  if (base.length !== 33 || point.length !== 33) {
+    throw new Error('revocationPubkey: both inputs must be compressed 33-byte points');
+  }
+  return toHex(toXOnly(pointCombine(base, h1(base, point), point, h2(base, point))));
 }
 
 /**

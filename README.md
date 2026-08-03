@@ -8,7 +8,7 @@
 
 **Bitcoin's UTXO value layer · an Ethereum-style contract layer that holds no balance · a Lightning-style channel network**
 
-[![tests](https://img.shields.io/badge/tests-146%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![tests](https://img.shields.io/badge/tests-189%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
 [![node](https://img.shields.io/badge/full%20node-P2P%20%2B%20reorg%20%2B%20SQLite-38d9ff?style=flat-square&labelColor=0c0f18)](#-running-a-node)
 [![supply](https://img.shields.io/badge/supply-21%2C000%2C000%20DECKX-ff2d55?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![halving](https://img.shields.io/badge/halving-every%20365%20days-ffb020?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
@@ -23,7 +23,7 @@
 ---
 
 ```
- genesis   000033be141b2fc85b4df117dc41c733f2b4d83c29b9d55d84ac8db96670985c
+ genesis   000081f3be3827f4e30701ab4ed75563fb610c1735154f4b41b83b8f5c444f00
  mined     real proof of work — not hard-coded — ~65,536 expected attempts
  subsidy   199.77168949 DECKX   (derived from the cap, not chosen)
  halving   every 52,560 blocks  (exactly 365 days at 600s spacing)
@@ -82,16 +82,17 @@ flowchart TB
         V1[2-of-2 funding] --- V2[asymmetric commitments]
         V2 --- V3[HTLCs + penalties]
         V3 --- V4[Sphinx onion · 1366 B]
+        V5 --- V6[watchtower]
         V4 --- V5[reverse-Dijkstra routing]
     end
     subgraph L1["⛓ DeckxCoin L1"]
         subgraph VAL["₿ Value — Bitcoin"]
-            B1[UTXO set] --- B2[secp256k1 ECDSA]
+            B1[UTXO set] --- B2[secp256k1 Schnorr]
             B2 --- B3[double-SHA256 PoW]
             B3 --- B4[nBits retarget]
         end
         subgraph ST["Ξ State — Ethereum"]
-            E1[DVM · 40 opcodes] --- E2[gas metering]
+            E1[DVM · 44 opcodes] --- E2[gas metering]
             E2 --- E3[contract storage]
             E3 --- E4[state root in header]
         end
@@ -102,7 +103,7 @@ flowchart TB
 
 | Layer | Heritage | Implemented |
 |---|---|---|
-| **Value** | Bitcoin whitepaper §§2–11 | UTXO set · secp256k1 · double-SHA256 PoW · 2016-block retarget · 21 M cap · 100-block coinbase maturity · Merkle root + SPV proofs |
+| **Value** | Bitcoin whitepaper §§2–11 | UTXO set · **BIP-340 Schnorr** · double-SHA256 PoW · 2016-block retarget · 21 M cap · 100-block coinbase maturity · Merkle root + SPV proofs |
 | **State** | Ethereum / EVM | 256-bit stack VM (44 opcodes) · persistent storage · gas metering · REVERT · logs · deterministic addresses · `stateRoot` in every header |
 | **Speed** | Poon–Dryja · BOLT 2/3/4/11 | 2-of-2 funding · asymmetric commitments · EC-derived revocation keys · HTLCs · penalty sweeps · Sphinx onion · signed invoices · fee-aware pathfinding · **watchtower** |
 | **Network** | Bitcoin P2P | Framed wire protocol · handshake · addr gossip · inv/getdata relay · headers sync · orphan pool · ban scoring · **SQLite persistence** · **reorg with undo records** · JSON-RPC |
@@ -146,8 +147,9 @@ python docs/build-whitepaper.py    # rebuilds docs/DeckxCoin-Whitepaper.pdf
 
 </details>
 
-Three dependencies, all audited and minimal: `@noble/hashes`, `@noble/secp256k1`, `@scure/base`.
-Persistence uses `node:sqlite`, which ships with Node — the full node adds **zero** dependencies.
+Three dependencies, all audited and minimal: `@noble/curves`, `@noble/hashes`, `@scure/base`.
+Persistence (`node:sqlite`) and encryption (`node:crypto`) ship with Node, so the full node and
+its encrypted transport add **zero** dependencies.
 
 ---
 
@@ -375,7 +377,7 @@ illustrative.
 
 | # | Step | Result |
 |:-:|---|---|
-| 1 | Genesis mined | `000033be…985c` · ~650 ms |
+| 1 | Genesis mined | `000081f3…4f00` · ~650 ms |
 | 2 | Coinbase matured | 100 blocks |
 | 3 | First spend from genesis | 30 DECKX → alice |
 | 4 | TimeVault deployed | unlocks at height 105 |
@@ -426,7 +428,7 @@ chain/
 │     ├─ invoice.ts     bech32m `lnvolt1…` signed payment requests
 │     ├─ network.ts     nodes · channel lifecycle · end-to-end routed payments
 │     └─ watchtower.ts  encrypted breach blobs the tower cannot read
-├─ test/              146 tests across 10 files
+├─ test/              189 tests across 13 files
 └─ scripts/
    ├─ testnet.ts      launch a local multi-node network
    └─ export-web-data.ts → web/data/chain.json
@@ -446,10 +448,10 @@ docs/
 | P2P networking | ✅ done | Handshake, addr gossip, inv/getdata relay, headers sync, orphan pool, ban scoring. No NAT traversal, no DNS seeds, no encryption on the wire (BIP-324 equivalent). |
 | Persistence | ✅ done | SQLite via `node:sqlite`, WAL, transactional block application. |
 | Reorg handling | ✅ done | Undo records, most-work fork choice, rollback on failure, depth limit. No pruning of old block bodies. |
-| Volt watchtowers | ✅ done | Encrypted blobs keyed by a txid hint — the tower cannot read what it stores. No fee bumping, no reward mechanism, no persistence across restart. |
-| Wire encryption | ❌ absent | Frames are plaintext JSON. Anyone on the path sees the traffic. |
+| Volt watchtowers | ✅ done | Encrypted blobs keyed by a txid hint — the tower cannot read what it stores. Fee ladders with escalation, persisted to SQLite. No reward mechanism, no accountability. |
+| Wire encryption | ✅ done | Ephemeral ECDH + ChaCha20-Poly1305, encrypted length prefixes, rekeying. No ElligatorSwift, so the handshake is fingerprintable; no identity keys, so an active MITM is not stopped. |
 | Peer discovery | ⚠️ partial | Gossip works; there are no DNS seeds, so a fresh node needs one `--connect`. |
-| Signature scheme | ⚠️ ECDSA | Schnorr / BIP-340 would give batch verification and cheaper multisig. |
+| Signature scheme | ✅ done | BIP-340 Schnorr throughout, verified against the official test vectors. Batch verification has an interface but loops internally — the primitive is not exposed by the library. |
 | Mining | ⚠️ reference | Single-threaded, no stratum. Proves the header is honest; does not compete. |
 | Gas refunds | ⚠️ simplified | Fee must cover `gasUsed × gasPrice`; unused reservation is a miner tip. |
 | Composability | ❌ by design | No `CALL` opcode. This forecloses composable finance entirely — deliberately. |

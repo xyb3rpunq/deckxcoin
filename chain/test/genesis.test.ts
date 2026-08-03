@@ -14,16 +14,18 @@ import {
   blockHash,
   blockSubsidy,
   checkHeader,
+  computeMerkleRoot,
   GENESIS_BITS,
   GENESIS_MEMO,
   HALVING_INTERVAL,
   INITIAL_SUBSIDY,
   MAX_SUPPLY,
   meetsTarget,
+  mine,
 } from '../src/block.ts';
 import { verifyMerkleProof, merkleProof } from '../src/merkle.ts';
 import { COINBASE_MATURITY } from '../src/state.ts';
-import { checkTx, formatDeckx, signTx, transferTx, txid, ZAPS_PER_DECKX } from '../src/tx.ts';
+import { checkTx, coinbaseTx, formatDeckx, signTx, transferTx, txid, ZAPS_PER_DECKX } from '../src/tx.ts';
 import { keyPairFromSeed, beToBigInt, fromHex } from '../src/crypto.ts';
 
 test('genesis is deterministic — two independent constructions agree byte for byte', () => {
@@ -224,13 +226,30 @@ test('a block whose state root is wrong is rejected', () => {
   const chain = Blockchain.regtest();
   const miner = keyPairFromSeed('deckxcoin/regtest');
   const t = chain.tip.header.time + 600;
-  const { block } = chain.mineBlock([], miner.address, { time: t });
 
-  const forged = {
-    ...block,
-    header: { ...block.header, stateRoot: 'ab'.repeat(32), height: chain.height + 1 },
+  /*
+   * Build a block that is valid in *every other respect* — right height, right
+   * parent, right difficulty, real proof of work over the forged header — and
+   * differs only in its state-root commitment. Mutating an already-accepted
+   * block instead would trip the height or prevHash check first, and the test
+   * would pass without ever reaching the rule it claims to cover.
+   */
+  const cb = coinbaseTx(miner.address, blockSubsidy(1), 1, 'forged');
+  const forgedHeader = {
+    version: 1,
+    prevHash: chain.tipHash,
+    merkleRoot: computeMerkleRoot([cb]),
+    stateRoot: 'ab'.repeat(32),
+    time: t,
+    bits: chain.nextBitsFor(1),
+    height: 1,
+    nonce: 0,
+    extraNonce: 0,
   };
+  const forged = { header: mine(forgedHeader).header, transactions: [cb] };
+
   const res = chain.addBlock(forged, t + 1);
   assert.equal(res.ok, false);
-  assert.ok(/proof of work|state root/.test(res.error!), res.error);
+  assert.match(res.error!, /state root mismatch/);
+  assert.equal(chain.height, 0, 'the chain must not have moved');
 });

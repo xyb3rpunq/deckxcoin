@@ -35,7 +35,7 @@ jobs:
       - name: Genesis hash must match the published constant
         working-directory: chain
         run: |
-          EXPECTED=000033be141b2fc85b4df117dc41c733f2b4d83c29b9d55d84ac8db96670985c
+          EXPECTED=000081f3be3827f4e30701ab4ed75563fb610c1735154f4b41b83b8f5c444f00
           ACTUAL=$(node -e "
             import('./src/chain.ts').then(async (c) => {
               const b = await import('./src/block.ts');

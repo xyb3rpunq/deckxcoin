@@ -23,6 +23,7 @@ import {
   addressFromHash160,
   beToBigInt,
   type Hex,
+  type KeyPair,
 } from '../crypto.ts';
 import type { Blockchain } from '../chain.ts';
 import {
@@ -205,7 +206,7 @@ export class VoltNetwork {
     capacity: bigint;
     /** UTXO the funder spends. Must be owned by `a`'s key. */
     funding: Utxo;
-    funderKey: { privateKey: Uint8Array; publicKey: Uint8Array; address: string };
+    funderKey: KeyPair;
     changeAddress?: string;
     feeZaps?: bigint;
     pushToB?: bigint;
@@ -240,7 +241,7 @@ export class VoltNetwork {
       memo: `volt:open:${a.name}-${b.name}`,
     });
     const prev: PrevOut = { value: funding.value, address: funding.address, script: funding.script };
-    fundingTx = signTx(fundingTx, funderKey as never, [prev]);
+    fundingTx = signTx(fundingTx, funderKey, [prev]);
 
     const ftxid = txid(fundingTx);
     const scid = shortChannelId(ftxid, 0);

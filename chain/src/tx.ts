@@ -32,6 +32,7 @@ import {
   fromHex,
   isContractAddress,
   isValidAddress,
+  PUBKEY_BYTES,
   sha256 as sha256Bytes,
   sign,
   taggedHash,
@@ -60,9 +61,9 @@ export interface TxInput {
   readonly txid: Hex;
   /** Index of the output being spent. */
   readonly vout: number;
-  /** Compressed pubkey hex whose HASH160 must match the referenced output's address. */
+  /** 32-byte x-only BIP-340 pubkey whose HASH160 must match the output's address. */
   readonly pubkey: Hex;
-  /** 64-byte compact ECDSA signature over the sighash. */
+  /** 64-byte BIP-340 Schnorr signature over the sighash. */
   readonly signature: Hex;
   /** BIP-68 style relative locktime in blocks. Volt uses this for revocation windows. */
   readonly sequence: number;
@@ -372,7 +373,9 @@ export function checkTx(tx: Transaction, prevOuts: readonly PrevOut[]): TxCheck 
     }
 
     const pubkey = fromHex(input.pubkey);
-    if (pubkey.length !== 33) return bad(`input ${i}: pubkey must be 33 bytes compressed`);
+    if (pubkey.length !== PUBKEY_BYTES) {
+      return bad(`input ${i}: pubkey must be ${PUBKEY_BYTES} bytes (BIP-340 x-only)`);
+    }
 
     const script = prev.script ?? { type: 'p2pkh' as const };
     const digest = sighash(tx, i, prev.value, prev.address);

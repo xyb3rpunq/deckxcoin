@@ -34,6 +34,15 @@ import { txid, type Transaction } from '../tx.ts';
 import { WorldState, outpoint, type ContractAccount, type Utxo } from '../state.ts';
 import type { Hex } from '../crypto.ts';
 
+/**
+ * Schema version.
+ *
+ * Only bumped for a change that an existing database cannot absorb. Every
+ * statement in `SCHEMA` is `CREATE ... IF NOT EXISTS` and runs on each open, so
+ * *adding* a table or an index is applied automatically and needs no bump —
+ * `watch_blobs` arrived that way. A bump means "this build cannot read that
+ * database", and it should mean exactly that, not "something changed".
+ */
 export const SCHEMA_VERSION = 1;
 
 /** Everything needed to undo one block's effect on the world state. */
@@ -120,6 +129,19 @@ CREATE TABLE IF NOT EXISTS undo (
   height  INTEGER NOT NULL,
   payload TEXT NOT NULL
 );
+
+-- Watchtower blobs. Opaque to this node: it holds the ciphertext and the
+-- lookup hint, and cannot read either the penalty or which channel it guards.
+CREATE TABLE IF NOT EXISTS watch_blobs (
+  hint     TEXT NOT NULL,
+  sequence INTEGER NOT NULL,
+  fee      TEXT NOT NULL,
+  payload  TEXT NOT NULL,
+  mac      TEXT NOT NULL,
+  added_at INTEGER NOT NULL,
+  PRIMARY KEY (hint, sequence, fee)
+);
+CREATE INDEX IF NOT EXISTS watch_blobs_hint ON watch_blobs(hint);
 
 CREATE TABLE IF NOT EXISTS peers (
   host         TEXT NOT NULL,
@@ -492,6 +514,63 @@ export class ChainStore {
     this.#db.prepare('DELETE FROM peers WHERE host = ? AND port = ?').run(host, port);
   }
 
+  /* ──────────────────────────────────────────────── watchtower blobs ── */
+
+  /**
+   * Store a watchtower blob.
+   *
+   * The store is as blind as the tower: it holds a hint, a fee level, and
+   * ciphertext. Nothing here identifies a channel, a party, or an amount.
+   */
+  putWatchBlob(blob: {
+    hint: Hex;
+    sequence: number;
+    fee: string;
+    payload: Hex;
+    mac: Hex;
+  }): void {
+    this.#db
+      .prepare(
+        `INSERT INTO watch_blobs (hint, sequence, fee, payload, mac, added_at)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(hint, sequence, fee) DO UPDATE SET payload = excluded.payload, mac = excluded.mac`,
+      )
+      .run(blob.hint, blob.sequence, blob.fee, blob.payload, blob.mac, Math.floor(Date.now() / 1000));
+  }
+
+  /** Blobs for one hint, newest commitment first, cheapest fee first within that. */
+  watchBlobs(hint: Hex): Array<{ hint: Hex; sequence: number; fee: string; payload: Hex; mac: Hex }> {
+    const rows = this.#db
+      .prepare(
+        `SELECT hint, sequence, fee, payload, mac FROM watch_blobs
+         WHERE hint = ? ORDER BY sequence DESC, CAST(fee AS INTEGER) ASC`,
+      )
+      .all(hint) as Array<Record<string, unknown>>;
+    return rows.map((r) => ({
+      hint: r.hint as string,
+      sequence: Number(r.sequence),
+      fee: r.fee as string,
+      payload: r.payload as string,
+      mac: r.mac as string,
+    }));
+  }
+
+  /** Every stored hint. Used to rehydrate a tower's in-memory index on start. */
+  watchHints(): Hex[] {
+    const rows = this.#db.prepare('SELECT DISTINCT hint FROM watch_blobs').all() as Array<{
+      hint: string;
+    }>;
+    return rows.map((r) => r.hint);
+  }
+
+  forgetWatchBlobs(hint: Hex): number {
+    return Number(this.#db.prepare('DELETE FROM watch_blobs WHERE hint = ?').run(hint).changes);
+  }
+
+  get watchBlobCount(): number {
+    return (this.#db.prepare('SELECT COUNT(*) AS n FROM watch_blobs').get() as { n: number }).n;
+  }
+
   /* ───────────────────────────────────────────────────────── reports ── */
 
   stats() {
@@ -503,6 +582,7 @@ export class ChainStore {
       contracts: one('SELECT COUNT(*) AS n FROM contracts'),
       undoRecords: one('SELECT COUNT(*) AS n FROM undo'),
       peers: one('SELECT COUNT(*) AS n FROM peers'),
+      watchBlobs: one('SELECT COUNT(*) AS n FROM watch_blobs'),
     };
   }
 }
