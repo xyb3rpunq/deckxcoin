@@ -102,7 +102,7 @@ flowchart TB
 | Layer | Heritage | Implemented |
 |---|---|---|
 | **Value** | Bitcoin whitepaper §§2–11 | UTXO set · secp256k1 · double-SHA256 PoW · 2016-block retarget · 21 M cap · 100-block coinbase maturity · Merkle root + SPV proofs |
-| **State** | Ethereum / EVM | 256-bit stack VM · persistent storage · gas metering · REVERT · logs · deterministic addresses · `stateRoot` in every header |
+| **State** | Ethereum / EVM | 256-bit stack VM (44 opcodes) · persistent storage · gas metering · REVERT · logs · deterministic addresses · `stateRoot` in every header |
 | **Speed** | Poon–Dryja · BOLT 2/3/4/11 | 2-of-2 funding · asymmetric commitments · EC-derived revocation keys · HTLCs · penalty sweeps · Sphinx onion · signed invoices · fee-aware pathfinding |
 
 ---
@@ -302,7 +302,7 @@ chain/
 ├─ src/
 │  ├─ crypto.ts       hashes · keys · bech32m addresses · EC point/scalar combining
 │  ├─ merkle.ts       Bitcoin tx tree (+ CVE-2012-2459 guard) · state trie
-│  ├─ vm.ts           DVM — 40 opcodes · gas table · assembler
+│  ├─ vm.ts           DVM — 44 opcodes (102 instructions) · gas table · assembler
 │  ├─ tx.ts           transaction model · sighash · script types · validation
 │  ├─ block.ts        header · PoW · nBits · retarget · issuance schedule
 │  ├─ state.ts        UTXO set · contract accounts · state root

@@ -42,9 +42,6 @@ export const store = (slot: number | bigint, value: bigint): Tok[] => [
   OP.SSTORE,
 ];
 
-/** `storage[slot] = <top of stack>`. Consumes the value already pushed. */
-export const storeTop = (slot: number | bigint): Tok[] => [BigInt(slot), OP.SSTORE];
-
 /** `storage[slot] += 1`. */
 export const increment = (slot: number | bigint): Tok[] => [
   ...load(slot),
@@ -93,7 +90,6 @@ export const preimageMatchesSlot = (index: number, slot: number | bigint): Tok[]
 export const OR: Tok[] = [OP.OR];
 /** Logical AND of two already-pushed predicates. */
 export const AND: Tok[] = [OP.AND];
-export const NOT: Tok[] = [OP.ISZERO];
 
 /* ──────────────────────────────────────────────────────── control ──── */
 
