@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckxCoin — REKT protocol · Bitcoin UTXO + Ethereum contracts + Volt channels</title>
-<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 216 passing tests.">
+<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 275 passing tests.">
 <meta name="theme-color" content="#05060a">
 <meta property="og:title" content="DeckxCoin — REKT protocol">
 <meta property="og:description" content="Bitcoin's UTXO layer, Ethereum's contract layer, Lightning's channel layer. One chain. Mined genesis, not hardcoded.">
@@ -48,14 +48,14 @@
     <p class="lede">
       Every chain you have been rugged by started with a whitepaper you did not read.
       This one ships <strong>the whitepaper, the chain, and the tests together</strong> — a genesis
-      block that was <strong>mined, not hard-coded</strong>, 216 tests that fail loudly when the
+      block that was <strong>mined, not hard-coded</strong>, 275 tests that fail loudly when the
       cryptography is wrong, and source that carries its reasoning inline.
     </p>
 
     <div class="hero-stats" id="hero-stats">
       <div class="stat"><span class="stat-label">genesis hash</span><span class="stat-value mono" data-bind="genesis.hash.short">—</span></div>
       <div class="stat"><span class="stat-label">proof of work</span><span class="stat-value mono" data-bind="genesis.attempts">—</span></div>
-      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">216 / 216</span></div>
+      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">275 / 275</span></div>
       <div class="stat"><span class="stat-label">supply audit</span><span class="stat-value mono ok" data-bind="supply.status">—</span></div>
     </div>
 
@@ -823,7 +823,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 cd deckxcoin/chain
 npm install
 
-npm test              <span class="c"># 216 tests — crypto, consensus, VM, covenants, Volt, P2P</span>
+npm test              <span class="c"># 275 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
 node src/cli.ts genesis    <span class="c"># mine and verify the genesis block</span>
 node src/cli.ts verify     <span class="c"># prove genesis is reproducible</span>
 node src/cli.ts volt       <span class="c"># routed off-chain payment across two channels</span>
@@ -870,7 +870,7 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
         <tr><td>Gas refunds</td><td class="partial">simplified</td><td>The fee must cover <code>gasUsed × gasPrice</code>; unused reservation becomes a miner tip rather than being refunded to a change output.</td></tr>
         <tr><td>Volt watchtowers</td><td class="todo">absent</td><td>The penalty transaction is implemented and tested, but somebody has to be online to broadcast it.</td></tr>
         <tr><td>Multi-part payments</td><td class="todo">absent</td><td>A payment larger than any single channel's liquidity fails rather than splitting.</td></tr>
-        <tr><td>Wallet / HD keys</td><td class="todo">absent</td><td>Keys derive from seed phrases directly. No BIP-32, no address rotation.</td></tr>
+        <tr><td>Wallet / HD keys</td><td class="done">implemented</td><td>BIP-39 mnemonic with checksum, BIP-32 derivation, gap-limit discovery, coin selection and change handling. No encrypted keystore at rest.</td></tr>
         <tr><td>Quantum resistance</td><td class="todo">absent</td><td>secp256k1 like everyone else. Bitcoin's own migration is a multi-year programme that has not properly started.</td></tr>
       </tbody>
     </table>

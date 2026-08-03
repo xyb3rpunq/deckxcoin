@@ -8,11 +8,12 @@
 
 **Bitcoin's UTXO value layer · an Ethereum-style contract layer that holds no balance · a Lightning-style channel network**
 
-[![tests](https://img.shields.io/badge/tests-216%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![tests](https://img.shields.io/badge/tests-275%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
 [![node](https://img.shields.io/badge/full%20node-P2P%20%2B%20reorg%20%2B%20SQLite-38d9ff?style=flat-square&labelColor=0c0f18)](#-running-a-node)
 [![supply](https://img.shields.io/badge/supply-21%2C000%2C000%20DECKX-ff2d55?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![halving](https://img.shields.io/badge/halving-every%20365%20days-ffb020?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![contracts](https://img.shields.io/badge/covenants-5-8b6bff?style=flat-square&labelColor=0c0f18)](#-the-standard-covenant-library)
+[![wallet](https://img.shields.io/badge/wallet-BIP--39%20%2B%20BIP--32-ffb020?style=flat-square&labelColor=0c0f18)](#-the-wallet)
 [![node](https://img.shields.io/badge/node-%E2%89%A522.18-38d9ff?style=flat-square&labelColor=0c0f18)](#-quick-start)
 [![licence](https://img.shields.io/badge/licence-MIT-cdd6e4?style=flat-square&labelColor=0c0f18)](LICENSE)
 
@@ -106,7 +107,7 @@ flowchart TB
 | **Value** | Bitcoin whitepaper §§2–11 | UTXO set · **BIP-340 Schnorr** · double-SHA256 PoW · 2016-block retarget · 21 M cap · 100-block coinbase maturity · Merkle root + SPV proofs |
 | **State** | Ethereum / EVM | 256-bit stack VM (44 opcodes) · persistent storage · gas metering · REVERT · logs · deterministic addresses · `stateRoot` in every header |
 | **Speed** | Poon–Dryja · BOLT 2/3/4/11 | 2-of-2 funding · asymmetric commitments · EC-derived revocation keys · HTLCs · penalty sweeps · Sphinx onion · signed invoices · fee-aware pathfinding · **watchtower** |
-| **Network** | Bitcoin P2P | Framed wire protocol · handshake · addr gossip · inv/getdata relay · headers sync · orphan pool · ban scoring · **SQLite persistence** · **reorg with undo records** · JSON-RPC |
+| **Network** | Bitcoin P2P | Encrypted identity-bound transport · addr gossip · inv/getdata relay · headers sync · **compact block relay** · orphan pool · ban scoring · **SQLite persistence** · **reorg with undo records** · **fee estimation + RBF** · JSON-RPC |
 
 ---
 
@@ -234,6 +235,30 @@ to expose, and it is not. Reachable RPC belongs behind a proxy that terminates T
 | **Mempool** | Transactions from disconnected blocks return to the pool; those in connected blocks leave it; everything is revalidated against the new tip. Skipping this is how a node relays transactions a reorg already invalidated. |
 | **Orphans** | Blocks arriving before their parent are held (bounded to 100) and connected when the gap fills. |
 | **Misbehaviour** | Ban scoring: 1 for version skew, 10 for protocol violations, 100 for an invalid block or a framing error. A peer that is merely *behind* is never banned — that is how networks partition themselves. |
+
+---
+
+## 👛 The wallet
+
+BIP-39 mnemonic, BIP-32 derivation, and the four things a wallet actually has to get right.
+
+```bash
+node scripts/create-funded-wallet.ts --amount 1000 --out ./MY-WALLET.txt
+```
+
+| Concern | Approach |
+|---|---|
+| **A seed a human can write down** | 24 BIP-39 words with a checksum, so a mistyped word is *caught* rather than silently opening a different wallet. |
+| **Many addresses from one backup** | `m/84'/9333'/account'/change/index`. The coin type is the P2P port, not a SLIP-44 registration — claiming a registered number for a chain with no network would be squatting. |
+| **Finding your coins again** | Gap-limit discovery over both branches. A wallet that stopped at the first empty address would miss funds sent to a gap, which happens routinely. |
+| **Not losing the change** | Change goes to a derived address of the same wallet, never reused, and the amount is checked before signing. Dust-sized change is given to the miner rather than littering the UTXO set. |
+
+Every transaction the wallet builds is dry-run through the chain's own validator before being
+returned. A wallet that hands you a transaction the network will reject has done nothing useful.
+
+> [!WARNING]
+> There is no encrypted keystore. Keys live in memory for the life of the process and are written to
+> disk only on an explicit export. That is a real gap, and it is listed as one.
 
 ---
 
@@ -370,8 +395,16 @@ test/reorg.test.ts        11  persistence across restart · orphans · REORG wit
 test/network.test.ts      16  wire framing · handshake · addr gossip · block relay ·
                               late-joiner sync · tx relay · FORK CONVERGENCE over
                               real TCP · banning · ciphertext-on-the-wire · JSON-RPC
+test/wallet.test.ts       30  BIP-39 checksum catches a wrong word · derivation ·
+                              CHANGE GOES BACK TO THE WALLET · dust handling ·
+                              sweeps · coin selection · RECOVERY FROM THE WORDS
+test/compact.test.ts      11  salted short ids · reconstruction from a mempool ·
+                              asking for exactly what is missing · malformed
+                              announcements · bandwidth saving
+test/feerate.test.ts      18  percentile-not-mean estimation · thin history refused ·
+                              RBF rules incl. the bloat and relay-cost defences
                           ───
-                          216
+                          275
 ```
 
 **The test suite is the specification.** If a claim on the website or in this README is not backed by
@@ -438,7 +471,7 @@ chain/
 │     ├─ invoice.ts     bech32m `lnvolt1…` signed payment requests
 │     ├─ network.ts     nodes · channel lifecycle · end-to-end routed payments
 │     └─ watchtower.ts  encrypted breach blobs the tower cannot read
-├─ test/              216 tests across 13 files
+├─ test/              275 tests across 16 files
 └─ scripts/
    ├─ testnet.ts      launch a local multi-node network
    └─ export-web-data.ts → web/data/chain.json
@@ -466,7 +499,9 @@ docs/
 | Gas refunds | ⚠️ simplified | Fee must cover `gasUsed × gasPrice`; unused reservation is a miner tip. |
 | Composability | ❌ by design | No `CALL` opcode. This forecloses composable finance entirely — deliberately. |
 | Multi-part payments | ❌ absent | A payment exceeding any channel's liquidity fails rather than splitting. |
-| Wallet / HD keys | ❌ absent | Keys derive from seed phrases directly. No BIP-32. |
+| Fee estimation | ✅ done | Percentile-based over observed confirmation history. Backward-looking by construction — a fee spike is invisible until transactions have waited through it. |
+| Compact blocks | ✅ done | Salted six-byte short ids, reconstruction from the mempool. Cuts propagation bandwidth and therefore the orphan window. |
+| Wallet / HD keys | ✅ done | BIP-39 mnemonic, BIP-32 derivation at `m/84'/9333'/…`, gap-limit discovery, coin selection, change handling. No encrypted keystore at rest — keys live in memory only. |
 | Quantum resistance | ❌ absent | secp256k1, like everyone else. |
 
 ---

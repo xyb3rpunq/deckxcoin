@@ -9,3 +9,31 @@ coverage/
 *.tsbuildinfo
 .vscode/
 .idea/
+
+# ── Secrets ───────────────────────────────────────────────────────────────
+# This repository is public. Anything matching the patterns below would be
+# published irreversibly the moment it were committed — a leaked seed phrase
+# cannot be un-leaked by deleting the file afterwards, because the commit
+# stays in history and in every clone.
+#
+# Deliberately broad. A pattern that occasionally ignores something harmless
+# costs nothing; one that misses a key costs everything.
+*.wallet
+*.wallet.json
+wallet.json
+wallet-*.json
+*seed*.txt
+*seed-phrase*
+*mnemonic*
+*.key
+*.pem
+identity
+identity-*
+**/identity
+keystore/
+secrets/
+data/
+chain/data/
+*-export.txt
+*-export.json
+DECKXCOIN-WALLET-*

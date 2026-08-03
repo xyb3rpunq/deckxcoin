@@ -24,6 +24,8 @@
   "dependencies": {
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^1.7.1",
-    "@scure/base": "^1.2.4"
+    "@scure/base": "^1.2.4",
+    "@scure/bip32": "^2.2.0",
+    "@scure/bip39": "^2.2.0"
   }
 }
