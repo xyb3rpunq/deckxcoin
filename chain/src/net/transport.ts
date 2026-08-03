@@ -27,27 +27,52 @@
  * covered by the payload's AEAD tag as associated data, so it cannot be
  * tampered with either. This is BIP-324's design.
  *
- * ── What this is not ──────────────────────────────────────────────────────
- * Not a full BIP-324 implementation. It omits ElligatorSwift encoding, so the
- * 33-byte handshake keys are recognisable as secp256k1 points to an observer
- * doing traffic classification. That defends against *censorship by protocol
- * fingerprinting*, which is a different threat from confidentiality, and it is
- * stated here rather than implied away.
+ * ── Identity binding stops an active man-in-the-middle ────────────────────
+ * Encryption alone only defeats a *passive* observer. An attacker who can
+ * intercept and relay runs two separate sessions — one with each side — and
+ * reads everything. Nothing in the ECDH above prevents that, because neither
+ * ephemeral key is tied to anyone in particular.
  *
- * There is also no authentication of the *identity* behind the ephemeral key,
- * so an active man-in-the-middle who can intercept and relay is not stopped.
- * Bitcoin has the same property: encryption raises the cost of passive
- * surveillance enormously and does nothing about an active attacker on the
- * path. Node identity keys would fix it and are not implemented.
+ * The fix is to sign the transcript. Each side proves ownership of a long-term
+ * identity key over `sessionId`, which is derived from both ephemeral keys. A
+ * relaying attacker necessarily has *different* session ids on its two legs,
+ * so a signature it received on one leg is worthless on the other, and it
+ * cannot forge one without the identity key. See `src/net/identity.ts`.
+ *
+ * ── What this is still not ────────────────────────────────────────────────
+ * The handshake sends a bare 32-byte x-coordinate. That is better than a
+ * compressed point, whose leading `0x02`/`0x03` byte is a free classifier
+ * signal, but it is still not uniform: only about half of all 32-byte strings
+ * are valid x-coordinates, so a determined classifier gets roughly one bit per
+ * handshake. Making it indistinguishable needs ElligatorSwift, which is not
+ * implemented — and hand-rolling it would be the same mistake as hand-rolling
+ * BIP-340.
  */
 
 import { createCipheriv, createDecipheriv, hkdfSync } from 'node:crypto';
 
-import { concat, ecdh, equalBytes, pointFromSecret, randomPrivateKey, toHex, utf8, type Hex } from '../crypto.ts';
+import {
+  concat,
+  ecdh,
+  equalBytes,
+  pointFromSecret,
+  randomPrivateKey,
+  toHex,
+  toXOnly,
+  utf8,
+  type Hex,
+} from '../crypto.ts';
 import { MAX_MESSAGE_BYTES } from '../params.ts';
 
-/** Compressed ephemeral point exchanged in the clear. */
-export const HANDSHAKE_BYTES = 33;
+/**
+ * Ephemeral key exchanged in the clear, as a bare x-coordinate.
+ *
+ * 32 bytes rather than a 33-byte compressed point: the parity byte carries no
+ * information the exchange needs — `ecdh` hashes only the x-coordinate — and a
+ * constant leading `0x02`/`0x03` is a free signal to anyone classifying
+ * traffic. Dropping it costs nothing and removes the most obvious tell.
+ */
+export const HANDSHAKE_BYTES = 32;
 /** Encrypted length prefix. 3 bytes caps a frame at 16 MiB, well over the limit. */
 export const LENGTH_BYTES = 3;
 export const TAG_BYTES = 16;
@@ -275,7 +300,7 @@ export class Handshake {
 
   /** The bytes to put on the wire first, before anything else. */
   greeting(): Uint8Array {
-    return this.ephemeral;
+    return toXOnly(this.ephemeral);
   }
 
   get complete(): boolean {
@@ -294,18 +319,18 @@ export class Handshake {
     if (peerGreeting.length !== HANDSHAKE_BYTES) {
       throw new Error(`handshake: expected ${HANDSHAKE_BYTES} bytes, got ${peerGreeting.length}`);
     }
-    if (equalBytes(peerGreeting, this.ephemeral)) {
+    const ours = toXOnly(this.ephemeral);
+    if (equalBytes(peerGreeting, ours)) {
       throw new Error('handshake: peer echoed our own ephemeral key');
     }
-    if (peerGreeting[0] !== 0x02 && peerGreeting[0] !== 0x03) {
-      throw new Error('handshake: greeting is not a compressed point');
-    }
 
+    // Lifting fails for 32 bytes that are not an x-coordinate on the curve,
+    // which is how garbage is rejected before any key material is derived.
     const shared = ecdh(this.#secret, peerGreeting);
     // Sorting decides direction; whoever holds the lexicographically smaller
     // ephemeral key is "A". No role negotiation, no extra round trip.
-    const weAreA = compareBytes(this.ephemeral, peerGreeting) < 0;
-    const keys = deriveSessionKeys(shared, this.#network, this.ephemeral, peerGreeting, weAreA);
+    const weAreA = compareBytes(ours, peerGreeting) < 0;
+    const keys = deriveSessionKeys(shared, this.#network, ours, peerGreeting, weAreA);
 
     this.#done = true;
     return { cipher: new Cipher(keys), peerEphemeral: peerGreeting };

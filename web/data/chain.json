@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-03T16:13:36.116Z",
+  "generatedAt": "2026-08-03T16:34:55.262Z",
   "generatorVersion": "0.1.0",
   "network": {
     "name": "DeckxCoin mainnet-alpha",
@@ -594,7 +594,7 @@
     "reward": "19977168949",
     "rewardPretty": "199.77168949 DECKX",
     "address": "dxc1qetjaggsn8ldkhtv0u3f5qxee843zqdd0e0qkv8",
-    "mineMs": 139,
+    "mineMs": 137,
     "expectedAttempts": 65536
   },
   "tip": {
@@ -614,14 +614,14 @@
     {
       "step": 1,
       "title": "Genesis mined",
-      "detail": "000081f3be3827f4e30701ab4ed75563fb610c1735154f4b41b83b8f5c444f00 · bits 0x1f00ffff · 139ms",
+      "detail": "000081f3be3827f4e30701ab4ed75563fb610c1735154f4b41b83b8f5c444f00 · bits 0x1f00ffff · 137ms",
       "txid": "01341417f06bf9d16edf7507983ae6daf4f61e0f33a2f84d56140399ebecd9fe",
       "height": 0
     },
     {
       "step": 2,
       "title": "Coinbase matured",
-      "detail": "100 blocks mined in 147122ms · tip height 100",
+      "detail": "100 blocks mined in 141565ms · tip height 100",
       "height": 100
     },
     {
@@ -660,7 +660,7 @@
     {
       "step": 8,
       "title": "Routed payment settled",
-      "detail": "alice → bob → carol · 0.75031500 DECKX sent · 31500 zaps routing fee · 503ms · 0 on-chain transactions"
+      "detail": "alice → bob → carol · 0.75031500 DECKX sent · 31500 zaps routing fee · 537ms · 0 on-chain transactions"
     },
     {
       "step": 9,
@@ -2060,7 +2060,7 @@
       ],
       "preimage": "a49043f6b5a0cc911e97fd64712037d5dd4f51e10e6b7da301e6e51ebc9bc323",
       "onionBytes": 1366,
-      "settleMs": 503
+      "settleMs": 537
     },
     "openChannelStates": [
       "opening",
@@ -2070,8 +2070,8 @@
     ]
   },
   "timings": {
-    "genesisMs": 139,
-    "maturityMs": 147122,
-    "paymentMs": 503
+    "genesisMs": 137,
+    "maturityMs": 141565,
+    "paymentMs": 537
   }
 }

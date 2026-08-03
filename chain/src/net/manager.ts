@@ -25,7 +25,8 @@ import {
   type NetworkParams,
 } from '../params.ts';
 import type { ChainStore } from '../store/sqlite.ts';
-import type { Hex } from '../crypto.ts';
+import type { Hex, KeyPair } from '../crypto.ts';
+import { IDENTITY_VERDICT, isFatalVerdict, judgeIdentity } from './identity.ts';
 
 export interface ManagerOptions {
   readonly params: NetworkParams;
@@ -36,6 +37,8 @@ export interface ManagerOptions {
   readonly genesis: Hex;
   readonly localHeight: () => number;
   readonly localWork: () => bigint;
+  /** This node's long-term identity. Proves who we are on every connection. */
+  readonly identity: KeyPair;
   /** Set false for a node that should only make outbound connections. */
   readonly listen?: boolean;
   readonly maxOutbound?: number;
@@ -156,8 +159,14 @@ export class PeerManager extends EventEmitter {
     this.#attach(socket, false);
   }
 
-  /** Dial `host:port`. Resolves once the handshake completes or fails. */
-  connect(host: string, port: number): Promise<Peer | undefined> {
+  /**
+   * Dial `host:port`. Resolves once the handshake completes or fails.
+   *
+   * `expectedIdentity` pins the peer's long-term key. When supplied, a peer
+   * proving any other identity is refused outright — the strong defence
+   * against a man in the middle.
+   */
+  connect(host: string, port: number, expectedIdentity?: Hex): Promise<Peer | undefined> {
     const key = `${host}:${port}`;
     if (this.isBanned(host)) return Promise.resolve(undefined);
     if (this.#dialling.has(key)) return Promise.resolve(undefined);
@@ -185,7 +194,7 @@ export class PeerManager extends EventEmitter {
       socket.connect(port, host, () => {
         socket.setTimeout(0);
         this.#dialling.delete(key);
-        const peer = this.#attach(socket, true, port);
+        const peer = this.#attach(socket, true, port, expectedIdentity);
         peer.once('ready', () => {
           if (settled) return;
           settled = true;
@@ -201,7 +210,12 @@ export class PeerManager extends EventEmitter {
     });
   }
 
-  #attach(socket: Socket, outbound: boolean, knownListenPort?: number): Peer {
+  #attach(
+    socket: Socket,
+    outbound: boolean,
+    knownListenPort?: number,
+    expectedIdentity?: Hex,
+  ): Peer {
     const peer = new Peer({
       params: this.params,
       socket,
@@ -212,6 +226,8 @@ export class PeerManager extends EventEmitter {
       localWork: this.#opts.localWork,
       genesis: this.#opts.genesis,
       ourNonces: this.#ourNonces,
+      identity: this.#opts.identity,
+      expectedIdentity,
     });
     if (knownListenPort) peer.listenPort = knownListenPort;
 
@@ -219,6 +235,38 @@ export class PeerManager extends EventEmitter {
 
     peer.on('ready', () => {
       const addr = peer.advertisedAddress;
+
+      /*
+       * Trust on first use. The signature already proved the peer owns *some*
+       * identity; this decides whether it is the identity we saw last time. A
+       * change means either the operator re-keyed or somebody is in the
+       * middle, and the two are indistinguishable from here — so it is fatal
+       * and loud, exactly as SSH treats it.
+       */
+      if (addr && !expectedIdentity) {
+        const judged = judgeIdentity(this.store, addr.host, addr.port, peer.peerIdentity);
+        if (isFatalVerdict(judged.verdict)) {
+          this.emit('identityChanged', {
+            host: addr.host,
+            port: addr.port,
+            previous: judged.previous,
+            current: peer.peerIdentity,
+          });
+          peer.disconnect(
+            `identity for ${addr.host}:${addr.port} changed from ` +
+              `${judged.previous?.slice(0, 16)}… to ${peer.peerIdentity.slice(0, 16)}…`,
+          );
+          return;
+        }
+        if (judged.verdict === IDENTITY_VERDICT.NEW) {
+          this.emit('identityLearned', {
+            host: addr.host,
+            port: addr.port,
+            identity: peer.peerIdentity,
+          });
+        }
+      }
+
       if (addr) this.store.rememberPeer(addr.host, addr.port, true);
       // Ask a new peer who else it knows. This is the whole of peer discovery.
       peer.send(MSG.GETADDR, {});

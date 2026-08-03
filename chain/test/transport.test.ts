@@ -19,7 +19,7 @@ import {
   REKEY_INTERVAL,
   TAG_BYTES,
 } from '../src/net/transport.ts';
-import { ecdh, equalBytes, fromHex, keyFromSeed, pointFromSecret, toHex, utf8 } from '../src/crypto.ts';
+import { ecdh, equalBytes, fromHex, keyFromSeed, pointFromSecret, toHex, toXOnly, utf8 } from '../src/crypto.ts';
 import { encodeMessage, decodeMessage, MSG } from '../src/net/wire.ts';
 import { REGTEST, TESTNET } from '../src/params.ts';
 
@@ -40,12 +40,28 @@ test('both sides derive the same session from opposite halves of the exchange', 
   assert.equal(fromHex(cipherA.sessionId).length, 32);
 });
 
-test('the greeting is a compressed point of the expected size', () => {
+test('the greeting is a bare x-coordinate, with no parity byte to fingerprint', () => {
   const h = new Handshake(REGTEST.name, keyFromSeed('transport/greeting'));
   const greeting = h.greeting();
+
   assert.equal(greeting.length, HANDSHAKE_BYTES);
-  assert.ok(greeting[0] === 0x02 || greeting[0] === 0x03);
-  assert.equal(toHex(greeting), toHex(pointFromSecret(keyFromSeed('transport/greeting'))));
+  assert.equal(HANDSHAKE_BYTES, 32);
+  assert.equal(toHex(greeting), toHex(toXOnly(pointFromSecret(keyFromSeed('transport/greeting')))));
+
+  /*
+   * The point of dropping the parity byte: a compressed point always starts
+   * 0x02 or 0x03, which hands a traffic classifier a free signal. Across many
+   * greetings the first byte must now look like anything.
+   */
+  const firstBytes = new Set<number>();
+  for (let i = 0; i < 60; i++) {
+    firstBytes.add(new Handshake(REGTEST.name, keyFromSeed(`transport/spread/${i}`)).greeting()[0]);
+  }
+  assert.ok(firstBytes.size > 20, `first byte should vary widely, saw ${firstBytes.size} values`);
+  assert.ok(
+    [...firstBytes].some((b) => b !== 0x02 && b !== 0x03),
+    'the greeting must not look like a compressed point',
+  );
 });
 
 test('a peer echoing our own key is refused', () => {
@@ -55,8 +71,17 @@ test('a peer echoing our own key is refused', () => {
 
 test('a malformed greeting is refused', () => {
   const h = () => new Handshake(REGTEST.name, keyFromSeed('transport/malformed'));
-  assert.throws(() => h().accept(new Uint8Array(10)), /expected 33 bytes/);
-  assert.throws(() => h().accept(new Uint8Array(33)), /not a compressed point/);
+
+  assert.throws(() => h().accept(new Uint8Array(10)), /expected 32 bytes/);
+  assert.throws(() => h().accept(new Uint8Array(33)), /expected 32 bytes/);
+
+  // 32 bytes that are not an x-coordinate on the curve. Roughly half of all
+  // strings are not, so this is the common case for random garbage.
+  const notOnCurve = new Uint8Array(32);
+  assert.throws(() => h().accept(notOnCurve), /./, 'all-zero is not a valid point');
+
+  const beyondField = new Uint8Array(32).fill(0xff);
+  assert.throws(() => h().accept(beyondField), /./, 'a value past the field size is not a point');
 });
 
 test('the same handshake cannot be completed twice', () => {

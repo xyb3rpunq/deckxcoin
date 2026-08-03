@@ -10,18 +10,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { Blockchain } from '../src/chain.ts';
-import { keyPairFromSeed, toHex } from '../src/crypto.ts';
+import { fromHex, keyPairFromSeed, toHex } from '../src/crypto.ts';
 import { txid, ZAPS_PER_DECKX } from '../src/tx.ts';
 import { COINBASE_MATURITY } from '../src/state.ts';
 import { VoltNetwork } from '../src/volt/network.ts';
 import {
+  auditRetention,
   backfill,
   blobForRevokedState,
   DEFAULT_FEE_LADDER,
   HINT_BYTES,
   ladderForRevokedState,
   openBlob,
+  retentionProof,
   sealBlob,
+  verifyReceipt,
   Watchtower,
 } from '../src/volt/watchtower.ts';
 import { ChainStore } from '../src/store/sqlite.ts';
@@ -440,6 +443,136 @@ test('forgetting a channel removes it from the database too', () => {
   tower.forget(ladder[0].hint);
   assert.equal(store.watchBlobCount, 0, 'a forgotten channel must not linger on disk');
   assert.equal(tower.blobCount, 0);
+});
+
+/* ──────────────────────────────────────────────────── accountability ── */
+
+test('a receipt proves the tower accepted the job', () => {
+  const { channel } = channelWithHistory();
+  const identity = keyPairFromSeed('tower/identity');
+  const tower = new Watchtower({ broadcast: () => true, identity });
+
+  const blob = blobForRevokedState(channel, 1, 'a', channel.b.key.address)!;
+  const receipt = tower.register(blob)!;
+
+  assert.ok(receipt, 'a tower with an identity must issue a receipt');
+  assert.equal(receipt.tower, toHex(identity.publicKey));
+  assert.equal(receipt.hint, blob.hint);
+  assert.equal(receipt.sequence, blob.sequence);
+  assert.equal(receipt.fee, blob.fee.toString());
+  assert.equal(verifyReceipt(receipt, blob, toHex(identity.publicKey)), true);
+});
+
+test('a receipt cannot be repudiated, altered, or reused for another blob', () => {
+  const { channel } = channelWithHistory();
+  const identity = keyPairFromSeed('tower/identity2');
+  const impostor = keyPairFromSeed('tower/impostor');
+  const tower = new Watchtower({ broadcast: () => true, identity });
+  const towerKey = toHex(identity.publicKey);
+
+  const ladder = ladderForRevokedState(channel, 1, 'a', channel.b.key.address);
+  const receipts = tower.registerLadder(ladder);
+  assert.equal(receipts.length, ladder.length, 'one receipt per rung');
+
+  const receipt = receipts[0];
+  const blob = ladder[0];
+
+  // Every field is covered, so changing any of them invalidates it.
+  assert.equal(verifyReceipt({ ...receipt, fee: '999' }, blob, towerKey), false);
+  assert.equal(verifyReceipt({ ...receipt, sequence: 99 }, blob, towerKey), false);
+  assert.equal(verifyReceipt({ ...receipt, acceptedAt: receipt.acceptedAt + 1 }, blob, towerKey), false);
+  assert.equal(verifyReceipt({ ...receipt, mac: 'ab'.repeat(32) }, blob, towerKey), false);
+
+  // A receipt for one rung does not cover another.
+  assert.equal(verifyReceipt(receipt, ladder[1], towerKey), false);
+
+  // And the tower cannot disown it by pointing at somebody else's key.
+  assert.equal(verifyReceipt(receipt, blob, toHex(impostor.publicKey)), false);
+  assert.equal(
+    verifyReceipt({ ...receipt, tower: toHex(impostor.publicKey) }, blob, toHex(impostor.publicKey)),
+    false,
+  );
+});
+
+test('a tower without an identity issues no receipts, and says so', () => {
+  const { channel } = channelWithHistory();
+  const tower = new Watchtower({ broadcast: () => true });
+  const blob = blobForRevokedState(channel, 1, 'a', channel.b.key.address)!;
+
+  assert.equal(tower.register(blob), undefined);
+  assert.equal(tower.identity, undefined);
+  assert.equal(tower.stats().accountable, false);
+});
+
+test('AUDIT: a client can prove the tower still holds its blob', () => {
+  const { channel } = channelWithHistory();
+  const tower = new Watchtower({
+    broadcast: () => true,
+    identity: keyPairFromSeed('tower/audit'),
+  });
+
+  const blob = blobForRevokedState(channel, 1, 'a', channel.b.key.address)!;
+  tower.register(blob);
+
+  const audit = auditRetention(tower, blob);
+  assert.equal(audit.held, true, 'a tower holding the blob must pass');
+  assert.equal(fromHex(audit.challenge).length, 32);
+  assert.equal(tower.stats().auditsAnswered, 1);
+
+  // A fresh challenge each time, so a stale answer cannot be replayed.
+  const second = auditRetention(tower, blob);
+  assert.notEqual(second.challenge, audit.challenge);
+  assert.equal(second.held, true);
+});
+
+test('AUDIT: a tower that dropped the blob cannot fake retention', () => {
+  const { channel } = channelWithHistory();
+  const tower = new Watchtower({ broadcast: () => true });
+  const blob = blobForRevokedState(channel, 1, 'a', channel.b.key.address)!;
+  tower.register(blob);
+
+  assert.equal(auditRetention(tower, blob).held, true);
+
+  tower.forget(blob.hint);
+  assert.equal(auditRetention(tower, blob).held, false, 'a dropped blob must fail the audit');
+  assert.equal(tower.proveRetention(blob.hint, 'ab'.repeat(32)), undefined);
+});
+
+test('AUDIT: a proof for one challenge does not answer another', () => {
+  const { channel } = channelWithHistory();
+  const blob = blobForRevokedState(channel, 1, 'a', channel.b.key.address)!;
+
+  const a = 'aa'.repeat(32);
+  const b = 'bb'.repeat(32);
+  assert.notEqual(retentionProof(a, blob), retentionProof(b, blob));
+
+  // And a proof over a different blob differs, so a tower cannot answer with
+  // whatever it happens to still hold.
+  const other = blobForRevokedState(channel, 2, 'a', channel.b.key.address)!;
+  assert.notEqual(retentionProof(a, blob), retentionProof(a, other));
+});
+
+test('AUDIT: the proof reveals nothing a third party could use', () => {
+  const { channel } = channelWithHistory();
+  const blob = blobForRevokedState(channel, 1, 'a', channel.b.key.address)!;
+  const proof = retentionProof('cc'.repeat(32), blob);
+
+  assert.equal(fromHex(proof).length, 32);
+  assert.equal(proof.includes(blob.payload.slice(0, 32)), false);
+  assert.equal(proof.includes(blob.mac), false);
+  // Only the client, who made the blob, can recompute it.
+  assert.equal(retentionProof('cc'.repeat(32), blob), proof);
+});
+
+test('a specific ladder rung can be audited independently', () => {
+  const { channel } = channelWithHistory();
+  const tower = new Watchtower({ broadcast: () => true });
+  const ladder = ladderForRevokedState(channel, 1, 'a', channel.b.key.address);
+  tower.registerLadder(ladder);
+
+  for (const rung of ladder) {
+    assert.equal(auditRetention(tower, rung).held, true, `rung at fee ${rung.fee} must be held`);
+  }
 });
 
 test('the database is as blind as the tower', () => {

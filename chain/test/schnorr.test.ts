@@ -284,21 +284,134 @@ test('there is no malleable second signature — the ECDSA low-s problem is gone
   assert.equal(verify(malleated, digest, key.publicKey), false);
 });
 
-test('batch verification agrees with one-by-one, and names the bad signature', () => {
-  const keys = ['a', 'b', 'c', 'd'].map((s) => keyPairFromSeed(`schnorr/batch/${s}`));
-  const items = keys.map((key, i) => {
-    const digest = taggedHash('batch', utf8(`message ${i}`));
+/** `count` valid signatures, each by a different key over a different message. */
+function batchOf(prefix: string, count: number) {
+  return Array.from({ length: count }, (_, i) => {
+    const key = keyPairFromSeed(`${prefix}/${i}`);
+    const digest = taggedHash('batch', utf8(`${prefix} message ${i}`));
     return { signature: sign(digest, key.privateKey), digest, publicKey: key.publicKey };
   });
+}
 
+test('batch verification accepts a valid batch and names the bad signature', () => {
+  const items = batchOf('schnorr/batch', 12);
   assert.deepEqual(verifyBatch(items), { ok: true });
 
   const corrupted = [...items];
-  corrupted[2] = { ...corrupted[2], signature: '00'.repeat(64) };
+  corrupted[7] = { ...corrupted[7], signature: '00'.repeat(64) };
   const result = verifyBatch(corrupted);
   assert.equal(result.ok, false);
-  assert.equal(result.failedIndex, 2, 'a batch failure must identify which one');
+  assert.equal(result.failedIndex, 7, 'a batch failure must identify which one');
 });
+
+test('batch verification agrees with one-by-one on every corruption shape', () => {
+  const base = batchOf('schnorr/agree', 10);
+
+  const mutations: Array<[string, (items: typeof base) => typeof base]> = [
+    ['untouched', (x) => x],
+    ['zero signature', (x) => replace(x, 3, { signature: '00'.repeat(64) })],
+    ['flipped signature byte', (x) => replace(x, 5, { signature: flipHex(x[5].signature, 10) })],
+    ['swapped digest', (x) => replace(x, 2, { digest: x[6].digest })],
+    ['swapped key', (x) => replace(x, 8, { publicKey: x[1].publicKey })],
+    ['signature from another item', (x) => replace(x, 4, { signature: x[9].signature })],
+    ['s at the group order', (x) => replace(x, 6, { signature: x[6].signature.slice(0, 64) + CURVE_N.toString(16).padStart(64, '0') })],
+    ['r of all zeroes', (x) => replace(x, 0, { signature: '00'.repeat(32) + x[0].signature.slice(64) })],
+    ['truncated signature', (x) => replace(x, 1, { signature: 'ab'.repeat(20) })],
+  ];
+
+  for (const [name, mutate] of mutations) {
+    const items = mutate([...base]);
+    const batch = verifyBatch(items);
+    const individually = items.every((it) => verify(it.signature, it.digest, it.publicKey));
+
+    assert.equal(batch.ok, individually, `'${name}': batch and individual verdicts must agree`);
+    if (!batch.ok) {
+      assert.equal(typeof batch.failedIndex, 'number', `'${name}': must report an index`);
+      const bad = items[batch.failedIndex!];
+      assert.equal(
+        verify(bad.signature, bad.digest, bad.publicKey),
+        false,
+        `'${name}': the reported index must actually be invalid`,
+      );
+    }
+  }
+});
+
+test('batch verification cannot be gamed by signatures whose errors cancel', () => {
+  /*
+   * The attack the random weights exist to stop. With aᵢ = 1 the batch checks
+   * Σsᵢ·G = Σ(Rᵢ + eᵢPᵢ), so an attacker who can add a value to one signature
+   * and subtract it from another passes the sum while both members are
+   * individually invalid.
+   *
+   * Here that is simulated directly: move a constant between two `s` values.
+   * The sum of `s` is unchanged, so an unweighted batch would accept.
+   */
+  const items = batchOf('schnorr/cancel', 6);
+  const delta = 0x1234_5678_9abc_def0n;
+
+  const shift = (signature: string, by: bigint): string => {
+    const s = (BigInt('0x' + signature.slice(64)) + by + CURVE_N) % CURVE_N;
+    return signature.slice(0, 64) + s.toString(16).padStart(64, '0');
+  };
+
+  const gamed = [...items];
+  gamed[1] = { ...gamed[1], signature: shift(gamed[1].signature, delta) };
+  gamed[2] = { ...gamed[2], signature: shift(gamed[2].signature, -delta) };
+
+  // Both members really are individually invalid…
+  assert.equal(verify(gamed[1].signature, gamed[1].digest, gamed[1].publicKey), false);
+  assert.equal(verify(gamed[2].signature, gamed[2].digest, gamed[2].publicKey), false);
+  // …and the sum of s is preserved, which is what an unweighted batch checks.
+  const sumOf = (list: typeof items) =>
+    list.reduce((acc, it) => (acc + BigInt('0x' + it.signature.slice(64))) % CURVE_N, 0n);
+  assert.equal(sumOf(gamed), sumOf(items), 'the harness must actually preserve Σs');
+
+  // The weighted batch rejects it.
+  const result = verifyBatch(gamed);
+  assert.equal(result.ok, false, 'randomised weights must defeat cancelling errors');
+  assert.ok(result.failedIndex === 1 || result.failedIndex === 2);
+});
+
+test('batch verification handles the degenerate sizes', () => {
+  assert.deepEqual(verifyBatch([]), { ok: true });
+  const one = batchOf('schnorr/one', 1);
+  assert.deepEqual(verifyBatch(one), { ok: true });
+  const three = batchOf('schnorr/three', 3);
+  assert.deepEqual(verifyBatch(three), { ok: true });
+});
+
+test('batch verification is faster than one-by-one at block scale', () => {
+  // The reason the chain uses Schnorr. If this ever regresses, the claim in
+  // the README and the whitepaper is no longer true and should be removed.
+  const items = batchOf('schnorr/perf', 256);
+
+  let start = performance.now();
+  for (const it of items) verify(it.signature, it.digest, it.publicKey);
+  const individually = performance.now() - start;
+
+  start = performance.now();
+  const result = verifyBatch(items);
+  const batched = performance.now() - start;
+
+  assert.equal(result.ok, true);
+  assert.ok(
+    batched < individually,
+    `batch (${batched.toFixed(0)}ms) must beat one-by-one (${individually.toFixed(0)}ms)`,
+  );
+});
+
+function replace<T>(items: T[], index: number, patch: Partial<T>): T[] {
+  const copy = [...items];
+  copy[index] = { ...copy[index], ...patch };
+  return copy;
+}
+
+function flipHex(hex: string, index: number): string {
+  const chars = [...hex];
+  chars[index] = chars[index] === 'a' ? 'b' : 'a';
+  return chars.join('');
+}
 
 /* ───────────────────────────────── x-only / point boundary ── */
 

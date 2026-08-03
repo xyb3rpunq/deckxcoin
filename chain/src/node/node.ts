@@ -40,7 +40,9 @@ import { MAX_HEADERS_PER_MESSAGE, MAX_INV_PER_MESSAGE, type NetworkParams } from
 import { ChainStore } from '../store/sqlite.ts';
 import { blockHash, type Block } from '../block.ts';
 import { txid, type Transaction } from '../tx.ts';
-import type { Hex } from '../crypto.ts';
+import { toHex, type Hex, type KeyPair } from '../crypto.ts';
+import { loadIdentity, parsePeerAddress } from '../net/identity.ts';
+import { tmpdir } from 'node:os';
 
 export interface NodeOptions {
   readonly params: NetworkParams;
@@ -52,9 +54,11 @@ export interface NodeOptions {
   readonly maxOutbound?: number;
   readonly maxInbound?: number;
   readonly dialIntervalMs?: number;
-  /** Addresses to dial at startup, `host:port`. */
+  /** Addresses to dial at startup: `host:port`, optionally `#identity` to pin. */
   readonly connect?: readonly string[];
   readonly undoRetention?: number;
+  /** Long-term identity. Generated and persisted in the datadir when omitted. */
+  readonly identity?: KeyPair;
 }
 
 /** Orphans are bounded — an attacker must not be able to fill memory with them. */
@@ -66,6 +70,8 @@ export class DeckxNode extends EventEmitter {
   readonly chain: ChainState;
   readonly mempool: Mempool;
   readonly net: PeerManager;
+  /** This node's long-term identity, proven on every connection. */
+  readonly identity: KeyPair;
 
   /** Blocks whose parent we do not have yet, keyed by their own hash. */
   readonly #orphans = new Map<Hex, Block>();
@@ -87,6 +93,14 @@ export class DeckxNode extends EventEmitter {
     });
     this.mempool = new Mempool();
 
+    this.identity =
+      opts.identity ??
+      loadIdentity(
+        opts.datadir === ':memory:'
+          ? `${tmpdir()}/deckx-identity-${process.pid}`
+          : `${opts.datadir}/identity`,
+      );
+
     this.net = new PeerManager({
       params: opts.params,
       store: this.store,
@@ -100,6 +114,7 @@ export class DeckxNode extends EventEmitter {
       maxOutbound: opts.maxOutbound,
       maxInbound: opts.maxInbound,
       dialIntervalMs: opts.dialIntervalMs,
+      identity: this.identity,
     });
 
     this.#wire();
@@ -116,10 +131,9 @@ export class DeckxNode extends EventEmitter {
     await this.net.start();
 
     for (const address of this.#initialPeers) {
-      const idx = address.lastIndexOf(':');
-      const host = idx === -1 ? address : address.slice(0, idx);
-      const port = idx === -1 ? this.params.defaultPort : Number(address.slice(idx + 1));
-      void this.net.connect(host, port);
+      // `host:port` or `host:port#identity` — the latter pins the peer's key.
+      const target = parsePeerAddress(address, this.params.defaultPort);
+      void this.net.connect(target.host, target.port, target.identity);
     }
     this.emit('started', this.info());
   }
@@ -134,6 +148,7 @@ export class DeckxNode extends EventEmitter {
   info() {
     return {
       ...this.chain.info(),
+      identity: toHex(this.identity.publicKey),
       userAgent: this.net.readyPeers.length,
       listenPort: this.net.listenPort,
       peers: this.net.peers.size,
@@ -166,6 +181,8 @@ export class DeckxNode extends EventEmitter {
     });
 
     this.net.on('banned', (detail) => this.emit('banned', detail));
+    this.net.on('identityChanged', (detail) => this.emit('identityChanged', detail));
+    this.net.on('identityLearned', (detail) => this.emit('identityLearned', detail));
     this.net.on('error', (err) => this.emit('error', err));
   }
 

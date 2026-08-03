@@ -29,9 +29,11 @@ We further describe Volt, a Poon–Dryja payment channel network built on the sa
 monetary policy of 21,000,000 units with a 365-day halving interval — a schedule whose consequences
 for the security budget we state explicitly rather than obscure.
 
-A complete implementation — roughly 5,800 lines of TypeScript, heavily commented, with a further
-2,300 lines of tests — accompanies this document. The genesis block was mined, not hard-coded, and
-can be reproduced on commodity hardware in under a second.
+A complete implementation — roughly 11,000 lines of TypeScript, heavily commented, with a further
+5,000 lines of tests — accompanies this document. It is a full node: peer-to-peer networking over an
+encrypted, identity-bound transport, durable storage, and reorganisation with undo records. The
+genesis block was mined, not hard-coded, and can be reproduced on commodity hardware in under a
+second.
 
 ---
 
@@ -569,12 +571,12 @@ broadcast within the 144-block window.
 
 ## 8. Implementation
 
-Roughly 5,800 lines of TypeScript, running directly on Node 22.18 or later via native type stripping
+Roughly 11,000 lines of TypeScript, running directly on Node 22.18 or later via native type stripping
 — no build step, no bundler. Three dependencies, all audited and minimal. The line count is high for
 the functionality because the source carries its reasoning inline; the comments are the design
 record, not decoration.
 
-The test suite is the specification. One hundred and eighty-nine tests cover primitives, consensus, the
+The test suite is the specification. Two hundred and sixteen tests cover primitives, consensus, the
 virtual machine, the covenant library, and the channel layer. Assertions run against the real
 validator; where a component could be tested against a mock, it deliberately is not.
 
@@ -592,8 +594,9 @@ no figure on it is illustrative.
 ## 9. Limitations
 
 Stated once, without hedging. There is no peer-to-peer layer, no persistence beyond an in-memory
-snapshot, no wallet or hierarchical key derivation, and no production miner. Batch signature verification has an
-interface but no batch primitive behind it. Gas reservations are not refunded — the excess
+snapshot, no wallet or hierarchical key derivation, and no production miner. Batch signature verification uses Pippenger
+multi-scalar multiplication and is measurably faster than one-by-one above
+about sixteen signatures. Gas reservations are not refunded — the excess
 becomes a miner tip, because a refund output would change the transaction shape. Volt lacks
 watchtowers, splicing, multi-part payments, and route hints.
 

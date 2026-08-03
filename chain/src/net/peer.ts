@@ -34,8 +34,9 @@ import {
   type WireMessage,
 } from './wire.ts';
 import { Cipher, Handshake, HANDSHAKE_BYTES } from './transport.ts';
+import { checkAuth, signAuth } from './identity.ts';
 import { BAN_THRESHOLD, PEER_TIMEOUT, PING_INTERVAL, type NetworkParams } from '../params.ts';
-import type { Hex } from '../crypto.ts';
+import type { Hex, KeyPair } from '../crypto.ts';
 
 export const PEER_STATE = {
   CONNECTING: 'connecting',
@@ -60,6 +61,10 @@ export interface PeerOptions {
   readonly genesis: Hex;
   /** Nonces of our own open connections, for self-connection detection. */
   readonly ourNonces: Set<string>;
+  /** This node's long-term identity. Signs the session transcript. */
+  readonly identity: KeyPair;
+  /** Identity we insist the peer proves, when one was pinned. */
+  readonly expectedIdentity?: Hex;
 }
 
 export interface PeerInfo {
@@ -80,6 +85,8 @@ export interface PeerInfo {
   readonly encrypted: boolean;
   /** Session identifier. Safe to log — it is derived material, not a key. */
   readonly sessionId: string;
+  /** The peer's proven long-term identity, once the handshake completes. */
+  readonly identity: string;
 }
 
 export class Peer extends EventEmitter {
@@ -114,6 +121,8 @@ export class Peer extends EventEmitter {
   #cipher?: Cipher;
   /** Session identifier, available once the key exchange completes. */
   sessionId = '';
+  /** The peer's identity, proven against this session. Empty until verified. */
+  peerIdentity = '';
 
   constructor(opts: PeerOptions) {
     super();
@@ -172,6 +181,7 @@ export class Peer extends EventEmitter {
       lastMessageAt: this.lastMessageAt,
       encrypted: this.encrypted,
       sessionId: this.sessionId,
+      identity: this.peerIdentity,
     };
   }
 
@@ -206,6 +216,8 @@ export class Peer extends EventEmitter {
       listenPort: this.#opts.listenPort,
       timestamp: Math.floor(Date.now() / 1000),
       genesis: this.#opts.genesis,
+      // Bound to this session, so it is worthless on any other connection.
+      auth: signAuth(this.#opts.identity, this.params.name, this.sessionId),
     };
     this.send(MSG.VERSION, payload);
   }
@@ -234,6 +246,27 @@ export class Peer extends EventEmitter {
       // Same network name, different genesis: incompatible chains. Dropping
       // immediately is far better than syncing garbage for an hour.
       this.disconnect(`genesis mismatch: peer has ${payload.genesis}`);
+      return;
+    }
+
+    /*
+     * Identity proof. This is what makes the encrypted channel worth having
+     * against an active attacker: a relay holds different session ids on its
+     * two legs, so a signature it received from one side cannot authenticate
+     * it to the other.
+     */
+    const auth = checkAuth(payload.auth, this.params.name, this.sessionId);
+    if (!auth.ok) {
+      this.disconnect(auth.error!);
+      return;
+    }
+    this.peerIdentity = auth.identity!;
+
+    if (this.#opts.expectedIdentity && this.#opts.expectedIdentity !== this.peerIdentity) {
+      this.disconnect(
+        `identity mismatch: pinned ${this.#opts.expectedIdentity.slice(0, 16)}…, ` +
+          `peer proved ${this.peerIdentity.slice(0, 16)}…`,
+      );
       return;
     }
 

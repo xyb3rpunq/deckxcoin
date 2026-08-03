@@ -47,6 +47,7 @@
 import { sha256 } from '@noble/hashes/sha256';
 import { ripemd160 } from '@noble/hashes/ripemd160';
 import { schnorr, secp256k1 } from '@noble/curves/secp256k1.js';
+import { pippenger } from '@noble/curves/abstract/curve.js';
 import { bech32m, hex as hexCodec } from '@scure/base';
 
 /** Curve point type from the underlying library. */
@@ -278,28 +279,128 @@ export function verify(signature: Hex, digest: Uint8Array, publicKey: Uint8Array
   }
 }
 
+export interface BatchItem {
+  readonly signature: Hex;
+  readonly digest: Uint8Array;
+  readonly publicKey: Uint8Array;
+}
+
 /**
- * Verify many signatures at once.
+ * Verify many signatures with one multi-scalar equation.
  *
- * The reason this chain uses Schnorr. Signatures are linear, so a verifier can
- * check the sum of randomly-weighted equations instead of each equation
- * separately, and initial block download stops being dominated by signature
- * checking.
+ * This is the reason the chain uses Schnorr at all. Verification is linear in
+ * the signature, so instead of checking `u` separate equations
  *
- * `@noble/curves` does not expose a batch primitive, so this loops — the
- * *interface* is what matters here: callers that hand over a batch get the
- * speed-up as soon as the primitive lands, without changing a line. A batch
- * that fails is retried one by one so the caller learns which signature was
- * bad, which a naive batch verifier cannot tell you.
+ *     sᵢ·G = Rᵢ + eᵢ·Pᵢ
+ *
+ * a verifier can pick random weights `aᵢ` and check their sum once:
+ *
+ *     (Σ aᵢsᵢ)·G = Σ aᵢRᵢ + Σ (aᵢeᵢ)·Pᵢ
+ *
+ * One base-point multiplication replaces `u` of them, and the rest is point
+ * addition. Initial block download is dominated by signature checking, so this
+ * is the largest speed-up available without touching consensus.
+ *
+ * ── The randomisers are load-bearing ──────────────────────────────────────
+ * With `aᵢ = 1` an attacker can craft two signatures whose errors cancel: both
+ * individually invalid, the pair batch-valid. The weights must therefore be
+ * *unpredictable to the signer*, which means cryptographically random and
+ * freshly drawn per batch. Fixing the first weight at 1 is safe and standard —
+ * it saves one multiplication and cannot be gamed, because every other term
+ * still carries an unpredictable factor.
+ *
+ * ── Failure reporting ─────────────────────────────────────────────────────
+ * A batch that fails says only "one of these is wrong". Callers usually need
+ * to know *which*, so on failure this falls back to verifying individually.
+ * That costs the speed-up exactly when it is not helping anyway.
  */
-export function verifyBatch(
-  items: ReadonlyArray<{ signature: Hex; digest: Uint8Array; publicKey: Uint8Array }>,
-): { ok: boolean; failedIndex?: number } {
+export function verifyBatch(items: readonly BatchItem[]): { ok: boolean; failedIndex?: number } {
+  if (items.length === 0) return { ok: true };
+  // Below a handful, the setup costs more than it saves.
+  if (items.length < 4) return verifyIndividually(items);
+
+  try {
+    let leftScalar = 0n; // Σ aᵢsᵢ  (mod n)
+
+    /*
+     * Collect the right-hand side as one multi-scalar multiplication rather
+     * than accumulating point-by-point.
+     *
+     * This is not a micro-optimisation, it is the whole point. A naive loop
+     * does two arbitrary-point multiplications per signature, while individual
+     * verification does one — so naive "batching" is *slower than not
+     * batching*, measurably about 4× worse. The win only appears with a
+     * multi-scalar algorithm that shares doublings across every term, which is
+     * what Pippenger's method does.
+     */
+    const points: Array<InstanceType<typeof Point>> = [];
+    const scalars: bigint[] = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const sig = fromHex(item.signature);
+      if (sig.length !== SIGNATURE_BYTES) return verifyIndividually(items);
+      if (item.digest.length !== 32) return verifyIndividually(items);
+
+      const pubkey = toXOnly(item.publicKey);
+      if (pubkey.length !== PUBKEY_BYTES) return verifyIndividually(items);
+
+      const r = sig.subarray(0, 32);
+      const s = beToBigInt(sig.subarray(32));
+      if (s >= CURVE_N) return verifyIndividually(items);
+
+      // lift_x on both the nonce and the key. Either can fail — an `r` that is
+      // not an x-coordinate, or a key off the curve — and `fromBytes` throws,
+      // which the catch below turns into a one-by-one pass that reports the
+      // offending index.
+      const R = Point.fromBytes(toPoint(r));
+      const P = Point.fromBytes(toPoint(pubkey));
+
+      // BIP-340's challenge: e = H_challenge(r ‖ pk ‖ m) mod n.
+      const e = beToBigInt(taggedHash('BIP0340/challenge', r, pubkey, item.digest)) % CURVE_N;
+
+      // First weight is 1; the rest are unpredictable.
+      const a = i === 0 ? 1n : randomScalar();
+      const ae = (a * e) % CURVE_N;
+      // `a·e ≡ 0` requires `e ≡ 0`, i.e. a challenge-hash collision. Refuse
+      // rather than silently substitute a different scalar.
+      if (ae === 0n) return verifyIndividually(items);
+
+      leftScalar = (leftScalar + a * s) % CURVE_N;
+      points.push(R, P);
+      scalars.push(a, ae);
+    }
+
+    const left = leftScalar === 0n ? Point.ZERO : Point.BASE.multiply(leftScalar);
+    const right = pippenger(Point, points, scalars);
+    if (left.equals(right)) return { ok: true };
+  } catch {
+    // A malformed point, an out-of-range scalar, anything: fall through.
+  }
+
+  // The batch did not verify. Find out which one, so the caller can act.
+  return verifyIndividually(items);
+}
+
+function verifyIndividually(items: readonly BatchItem[]): { ok: boolean; failedIndex?: number } {
   for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (!verify(item.signature, item.digest, item.publicKey)) return { ok: false, failedIndex: i };
+    if (!verify(items[i].signature, items[i].digest, items[i].publicKey)) {
+      return { ok: false, failedIndex: i };
+    }
   }
   return { ok: true };
+}
+
+/** A uniformly random scalar in [1, n−1]. Rejection-sampled, never reduced. */
+function randomScalar(): bigint {
+  for (;;) {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    const v = beToBigInt(bytes);
+    // Reducing mod n instead of rejecting would bias the low end. The bias is
+    // tiny, and so is the cost of not having it.
+    if (v > 0n && v < CURVE_N) return v;
+  }
 }
 
 /* ----------------------------------------------- adaptor points (PTLC-ready) */

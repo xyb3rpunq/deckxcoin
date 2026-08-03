@@ -90,6 +90,11 @@ export interface VersionPayload {
   readonly timestamp: number;
   /** Sender's genesis hash. A mismatch means incompatible chains. */
   readonly genesis: Hex;
+  /**
+   * Proof that the sender owns its long-term identity key, bound to this
+   * session. Without it an active man-in-the-middle is undetectable.
+   */
+  readonly auth: { readonly identity: Hex; readonly signature: Hex };
 }
 
 export interface AddrPayload {

@@ -8,7 +8,7 @@
 
 **Bitcoin's UTXO value layer · an Ethereum-style contract layer that holds no balance · a Lightning-style channel network**
 
-[![tests](https://img.shields.io/badge/tests-189%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![tests](https://img.shields.io/badge/tests-216%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
 [![node](https://img.shields.io/badge/full%20node-P2P%20%2B%20reorg%20%2B%20SQLite-38d9ff?style=flat-square&labelColor=0c0f18)](#-running-a-node)
 [![supply](https://img.shields.io/badge/supply-21%2C000%2C000%20DECKX-ff2d55?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![halving](https://img.shields.io/badge/halving-every%20365%20days-ffb020?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
@@ -337,9 +337,14 @@ gas running one.
 ## 🧪 Test coverage
 
 ```
-test/primitives.test.ts   24  hashes · addresses · signatures · EC identities · merkle
-                              proofs at every tree size · CVE-2012-2459 · state-trie
-                              order independence · difficulty · issuance schedule
+test/primitives.test.ts   24  hashes · addresses · EC identities · merkle proofs at
+                              every tree size · CVE-2012-2459 · state-trie order
+                              independence · difficulty · issuance schedule
+test/schnorr.test.ts      18  ALL 15 OFFICIAL BIP-340 VECTORS incl. 10 adversarial
+                              rejections · determinism · batch verification vs
+                              one-by-one on every corruption shape · the
+                              cancelling-error attack · x-only/point boundary
+                              across 20 independent parities
 test/genesis.test.ts      11  genesis determinism · real PoW · immaturity · THE FIRST
                               TRANSACTION · double-spend · state-root forgery
 test/vm.test.ts           14  256-bit wrap · gas exhaustion · REVERT rollback ·
@@ -349,19 +354,24 @@ test/covenant.test.ts      7  covenant creation · refusal · approval · recipi
 test/contracts.test.ts    18  all five covenants, end to end, against the real validator
 test/volt.test.ts         28  funding · payments · cooperative + force close · PENALTY
                               sweep · HTLC settle/refund on-chain · invoices · routing
-                              fees · END-TO-END routed payment
 test/onion.test.ts         8  layer peeling · constant packet size · tampering ·
                               payment-hash binding · ephemeral unlinkability
+test/watchtower.test.ts   24  blob privacy · BREACH CAUGHT while offline · fee-ladder
+                              escalation · persistence across restart · signed
+                              receipts · retention audits
+test/transport.test.ts    22  ECDH handshake · AEAD frames · encrypted lengths ·
+                              replay and reorder rejection · rekeying
+test/identity.test.ts     15  transcript signing · trust-on-first-use · pinning ·
+                              A WORKING MITM that decrypts real frames and is
+                              refused anyway
 test/reorg.test.ts        11  persistence across restart · orphans · REORG with state
                               following · exact UTXO restoration · failed-branch
                               rollback · depth limit · block locator
-test/network.test.ts      15  wire framing · handshake · addr gossip · block relay ·
-                              late-joiner sync · out-of-order blocks · tx relay ·
-                              FORK CONVERGENCE over real TCP · banning · JSON-RPC
-test/watchtower.test.ts   10  blob encryption · hint-only privacy · MAC failure ·
-                              BREACH CAUGHT while offline · honest close ignored
+test/network.test.ts      16  wire framing · handshake · addr gossip · block relay ·
+                              late-joiner sync · tx relay · FORK CONVERGENCE over
+                              real TCP · banning · ciphertext-on-the-wire · JSON-RPC
                           ───
-                          146
+                          216
 ```
 
 **The test suite is the specification.** If a claim on the website or in this README is not backed by
@@ -428,7 +438,7 @@ chain/
 │     ├─ invoice.ts     bech32m `lnvolt1…` signed payment requests
 │     ├─ network.ts     nodes · channel lifecycle · end-to-end routed payments
 │     └─ watchtower.ts  encrypted breach blobs the tower cannot read
-├─ test/              189 tests across 13 files
+├─ test/              216 tests across 13 files
 └─ scripts/
    ├─ testnet.ts      launch a local multi-node network
    └─ export-web-data.ts → web/data/chain.json
@@ -448,10 +458,10 @@ docs/
 | P2P networking | ✅ done | Handshake, addr gossip, inv/getdata relay, headers sync, orphan pool, ban scoring. No NAT traversal, no DNS seeds, no encryption on the wire (BIP-324 equivalent). |
 | Persistence | ✅ done | SQLite via `node:sqlite`, WAL, transactional block application. |
 | Reorg handling | ✅ done | Undo records, most-work fork choice, rollback on failure, depth limit. No pruning of old block bodies. |
-| Volt watchtowers | ✅ done | Encrypted blobs keyed by a txid hint — the tower cannot read what it stores. Fee ladders with escalation, persisted to SQLite. No reward mechanism, no accountability. |
-| Wire encryption | ✅ done | Ephemeral ECDH + ChaCha20-Poly1305, encrypted length prefixes, rekeying. No ElligatorSwift, so the handshake is fingerprintable; no identity keys, so an active MITM is not stopped. |
+| Volt watchtowers | ✅ done | Encrypted blobs keyed by a txid hint — the tower cannot read what it stores. Fee ladders with escalation, persisted to SQLite, **signed receipts and retention audits**. No reward mechanism. |
+| Wire encryption | ✅ done | Ephemeral ECDH + ChaCha20-Poly1305, encrypted length prefixes, rekeying, **signed identity binding that defeats an active MITM**. No ElligatorSwift, so the handshake is still ~1 bit distinguishable. |
 | Peer discovery | ⚠️ partial | Gossip works; there are no DNS seeds, so a fresh node needs one `--connect`. |
-| Signature scheme | ✅ done | BIP-340 Schnorr throughout, verified against the official test vectors. Batch verification has an interface but loops internally — the primitive is not exposed by the library. |
+| Signature scheme | ✅ done | BIP-340 Schnorr throughout, verified against the official test vectors. Real batch verification via Pippenger multi-scalar multiplication — **2.6× faster** at 1024 signatures. |
 | Mining | ⚠️ reference | Single-threaded, no stratum. Proves the header is honest; does not compete. |
 | Gas refunds | ⚠️ simplified | Fee must cover `gasUsed × gasPrice`; unused reservation is a miner tip. |
 | Composability | ❌ by design | No `CALL` opcode. This forecloses composable finance entirely — deliberately. |

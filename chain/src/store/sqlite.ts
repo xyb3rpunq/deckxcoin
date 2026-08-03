@@ -220,6 +220,18 @@ export class ChainStore {
       .run(key, value, value);
   }
 
+  /**
+   * Remove a meta entry.
+   *
+   * Distinct from `setMeta(key, '')`, which leaves a row holding an empty
+   * string — and a caller that checks `getMeta(key) !== undefined` then sees a
+   * value that is not there. That exact confusion made "forget this peer's
+   * identity" report the next connection as an identity *change*.
+   */
+  deleteMeta(key: string): boolean {
+    return Number(this.#db.prepare('DELETE FROM meta WHERE key = ?').run(key).changes) > 0;
+  }
+
   get tipHash(): Hex | undefined {
     return this.getMeta('tip');
   }

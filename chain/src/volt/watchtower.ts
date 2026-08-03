@@ -42,13 +42,42 @@
  * channel until the first reboot, which is worse than useless because the user
  * believes they are covered. The store is as blind as the tower.
  *
+ * ── Accountability ────────────────────────────────────────────────────────
+ * A tower that quietly does nothing looks exactly like one that is working,
+ * right up until the moment it matters. Two mechanisms make that
+ * distinguishable:
+ *
+ *   **Receipts.** Accepting a blob returns a signature by the tower's identity
+ *   key over `(hint, sequence, fee, mac)`. The client keeps it. If a breach
+ *   later goes unpunished, the receipt is evidence the tower took the job —
+ *   verifiable by anyone, and not repudiable by the tower.
+ *
+ *   **Retention audits.** A client can challenge a tower to prove it still
+ *   holds a blob. The tower answers `H(challenge ‖ payload ‖ mac)`, which it
+ *   can only compute from the stored ciphertext — and which the client can
+ *   check, because the client made the blob. A tower that has dropped the data
+ *   cannot answer, and the answer reveals nothing to a third party.
+ *
+ * What neither gives: proof that a tower will *act*. Retention is not
+ * diligence. A tower can hold every blob, answer every audit, and still be
+ * offline at the one moment that counts. Detecting that requires either
+ * staking or reputation, and neither is implemented.
+ *
  * ── What is still missing ─────────────────────────────────────────────────
- * No reward mechanism, so nobody is paid to run one. No accountability: a
- * tower that quietly does nothing is indistinguishable from one that is
- * working, right up until it matters.
+ * No reward mechanism, so nobody is paid to run one.
  */
 
-import { concat, fromHex, sha256, taggedHash, toHex, type Hex } from '../crypto.ts';
+import {
+  concat,
+  fromHex,
+  sha256,
+  sign,
+  taggedHash,
+  toHex,
+  verify,
+  type Hex,
+  type KeyPair,
+} from '../crypto.ts';
 import { txid, type Transaction } from '../tx.ts';
 import type { Block } from '../block.ts';
 import { VoltChannel } from './channel.ts';
@@ -165,6 +194,67 @@ export function openBlob(commitmentTxid: Hex, blob: WatchBlob): Transaction | un
   }
 }
 
+/* ────────────────────────────────────────────────── accountability ── */
+
+/**
+ * A tower's non-repudiable acknowledgement that it took a job.
+ *
+ * Signed over the blob's identifying fields — not over the plaintext, which
+ * the tower cannot read. That is enough: the client knows what it sealed, so
+ * it can reconstruct exactly what the tower signed.
+ */
+export interface Receipt {
+  readonly hint: Hex;
+  readonly sequence: number;
+  readonly fee: string;
+  readonly mac: Hex;
+  /** The tower's x-only identity key. */
+  readonly tower: Hex;
+  readonly signature: Hex;
+  readonly acceptedAt: number;
+}
+
+/** What a receipt commits to. */
+function receiptDigest(hint: Hex, sequence: number, fee: bigint, mac: Hex, acceptedAt: number) {
+  return taggedHash(
+    'Volt/watchtower/receipt/v1',
+    fromHex(hint),
+    encoder.encode(`${sequence}:${fee}:${acceptedAt}`),
+    fromHex(mac),
+  );
+}
+
+/**
+ * Check a receipt against the blob it claims to cover.
+ *
+ * A client runs this the moment it receives one. A tower that returns a
+ * receipt for the wrong blob, or one it did not sign, is caught immediately
+ * rather than at the point of failure.
+ */
+export function verifyReceipt(receipt: Receipt, blob: WatchBlob, tower: Hex): boolean {
+  if (receipt.tower !== tower) return false;
+  if (receipt.hint !== blob.hint) return false;
+  if (receipt.sequence !== blob.sequence) return false;
+  if (receipt.fee !== blob.fee.toString()) return false;
+  if (receipt.mac !== blob.mac) return false;
+
+  const digest = receiptDigest(receipt.hint, receipt.sequence, BigInt(receipt.fee), receipt.mac, receipt.acceptedAt);
+  return verify(receipt.signature, digest, fromHex(tower));
+}
+
+/**
+ * Answer to a retention challenge.
+ *
+ * `H(challenge ‖ payload ‖ mac)` — computable only from the stored ciphertext,
+ * and checkable by whoever created the blob. It proves the tower still has the
+ * data; it proves nothing about whether the tower will use it.
+ */
+export function retentionProof(challenge: Hex, blob: { payload: Hex; mac: Hex }): Hex {
+  return toHex(
+    taggedHash('Volt/watchtower/audit/v1', fromHex(challenge), fromHex(blob.payload), fromHex(blob.mac)),
+  );
+}
+
 /* ─────────────────────────────────────────────────────────── tower ── */
 
 export interface WatchtowerOptions {
@@ -176,6 +266,12 @@ export interface WatchtowerOptions {
   readonly retryAfterBlocks?: number;
   /** Reports whether a transaction has confirmed. Enables the retry loop. */
   readonly isConfirmed?: (id: Hex) => boolean;
+  /**
+   * The tower's long-term identity. Signs receipts, so clients hold evidence
+   * the job was accepted. Without one the tower issues no receipts and is
+   * unaccountable — which is the state this option exists to fix.
+   */
+  readonly identity?: KeyPair;
 }
 
 /** A breach that has been acted on but has not yet confirmed. */
@@ -195,16 +291,19 @@ export class Watchtower {
   readonly #store?: ChainStore;
   readonly #retryAfter: number;
   readonly #isConfirmed?: (id: Hex) => boolean;
+  readonly #identity?: KeyPair;
 
   readonly breaches: BreachReport[] = [];
   scannedBlocks = 0;
   escalations = 0;
+  auditsAnswered = 0;
 
   constructor(opts: WatchtowerOptions) {
     this.#broadcast = opts.broadcast;
     this.#store = opts.store;
     this.#retryAfter = opts.retryAfterBlocks ?? DEFAULT_RETRY_AFTER;
     this.#isConfirmed = opts.isConfirmed;
+    this.#identity = opts.identity;
 
     // Rehydrate from disk. A tower that forgets on restart protects a channel
     // until the first reboot, which is worse than not existing — the user
@@ -234,34 +333,85 @@ export class Watchtower {
     return this.#pending.size;
   }
 
+  /** The tower's public identity, or undefined when it issues no receipts. */
+  get identity(): Hex | undefined {
+    return this.#identity ? toHex(this.#identity.publicKey) : undefined;
+  }
+
   /**
    * Accept a blob. The tower cannot tell which channel it belongs to, who the
    * parties are, or how much is at stake — only the fee rung, which it needs
    * in order to escalate.
    */
-  register(blob: WatchBlob): void {
+  register(blob: WatchBlob): Receipt | undefined {
     const list = this.#blobs.get(blob.hint) ?? [];
-    if (list.some((b) => b.sequence === blob.sequence && b.fee === blob.fee && b.mac === blob.mac)) {
-      return;
-    }
-    list.push(blob);
-    // Newest commitment first; cheapest rung first within a commitment.
-    list.sort((a, b) => (b.sequence - a.sequence) || Number(a.fee - b.fee));
-    this.#blobs.set(blob.hint, list);
+    const already = list.some(
+      (b) => b.sequence === blob.sequence && b.fee === blob.fee && b.mac === blob.mac,
+    );
 
-    this.#store?.putWatchBlob({
+    if (!already) {
+      list.push(blob);
+      // Newest commitment first; cheapest rung first within a commitment.
+      list.sort((a, b) => b.sequence - a.sequence || Number(a.fee - b.fee));
+      this.#blobs.set(blob.hint, list);
+
+      this.#store?.putWatchBlob({
+        hint: blob.hint,
+        sequence: blob.sequence,
+        fee: blob.fee.toString(),
+        payload: blob.payload,
+        mac: blob.mac,
+      });
+    }
+
+    // A receipt is issued even for a duplicate: the client asked for an
+    // acknowledgement and is entitled to one either way.
+    return this.#issueReceipt(blob);
+  }
+
+  #issueReceipt(blob: WatchBlob): Receipt | undefined {
+    if (!this.#identity) return undefined;
+    const acceptedAt = Math.floor(Date.now() / 1000);
+    const digest = receiptDigest(blob.hint, blob.sequence, blob.fee, blob.mac, acceptedAt);
+    return {
       hint: blob.hint,
       sequence: blob.sequence,
       fee: blob.fee.toString(),
-      payload: blob.payload,
       mac: blob.mac,
-    });
+      tower: toHex(this.#identity.publicKey),
+      signature: sign(digest, this.#identity.privateKey),
+      acceptedAt,
+    };
   }
 
-  /** Register every rung of a ladder at once. */
-  registerLadder(blobs: readonly WatchBlob[]): number {
-    for (const blob of blobs) this.register(blob);
-    return blobs.length;
+  /** Register every rung of a ladder at once, returning one receipt per rung. */
+  registerLadder(blobs: readonly WatchBlob[]): Receipt[] {
+    const receipts: Receipt[] = [];
+    for (const blob of blobs) {
+      const receipt = this.register(blob);
+      if (receipt) receipts.push(receipt);
+    }
+    return receipts;
+  }
+
+  /**
+   * Answer a retention challenge.
+   *
+   * `mac` selects which blob, and it has to: every rung of a fee ladder shares
+   * the same hint *and* the same sequence, so those do not identify one. The
+   * MAC is unique per sealed penalty, and the client knows it because the
+   * client produced it.
+   *
+   * Returns `undefined` when the tower no longer holds the blob — which is
+   * exactly the answer a client needs, and the direction a tower cannot fake.
+   */
+  proveRetention(hint: Hex, challenge: Hex, mac?: Hex): Hex | undefined {
+    const blobs = this.#blobs.get(hint);
+    if (!blobs || blobs.length === 0) return undefined;
+    const blob = mac === undefined ? blobs[0] : blobs.find((b) => b.mac === mac);
+    if (!blob) return undefined;
+    this.auditsAnswered++;
+    return retentionProof(challenge, blob);
   }
 
   /**
@@ -386,6 +536,9 @@ export class Watchtower {
       scannedBlocks: this.scannedBlocks,
       breachesCaught: this.breaches.length,
       escalations: this.escalations,
+      auditsAnswered: this.auditsAnswered,
+      accountable: this.#identity !== undefined,
+      identity: this.identity,
       persistent: this.#store !== undefined,
       sweptZaps: this.breaches.reduce((s, b) => s + b.sweptZaps, 0n).toString(),
     };
@@ -464,4 +617,20 @@ export function backfill(
     }
   }
   return covered;
+}
+
+/**
+ * Client-side audit.
+ *
+ * The client holds the blobs it sealed, so it can compute the expected proof
+ * and compare. A fresh random challenge each time stops a tower replaying an
+ * old answer for data it has since discarded.
+ */
+export function auditRetention(
+  tower: Watchtower,
+  blob: WatchBlob,
+  challenge: Hex = toHex(crypto.getRandomValues(new Uint8Array(32))),
+): { held: boolean; challenge: Hex } {
+  const answer = tower.proveRetention(blob.hint, challenge, blob.mac);
+  return { held: answer === retentionProof(challenge, blob), challenge };
 }

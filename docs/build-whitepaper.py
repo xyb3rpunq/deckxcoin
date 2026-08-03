@@ -478,7 +478,7 @@ def cover(md: str) -> list:
         "",
         "genesis  000081f3be3827f4e30701ab4ed75563fb610c1735154f4b41b83b8f5c444f00",
         "supply   21,000,000 DECKX  ·  halving every 365 days",
-        "tests    189 passing",
+        "tests    216 passing",
         "licence  MIT",
     ]
     out.append(Paragraph("<br/>".join(esc(m) for m in meta), S["coverMeta"]))
