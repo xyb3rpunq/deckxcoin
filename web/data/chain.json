@@ -1,0 +1,2077 @@
+{
+  "generatedAt": "2026-08-03T10:55:14.551Z",
+  "generatorVersion": "0.1.0",
+  "network": {
+    "name": "DeckxCoin mainnet-alpha",
+    "ticker": "DECKX",
+    "unit": "zap",
+    "unitsPerCoin": "100000000",
+    "targetSpacingSeconds": 600,
+    "coinbaseMaturity": 100
+  },
+  "monetary": {
+    "maxSupply": "2100000000000000",
+    "maxSupplyPretty": "21000000.00000000 DECKX",
+    "halvingIntervalBlocks": 52560,
+    "halvingIntervalDays": 365,
+    "initialSubsidy": "19977168949",
+    "initialSubsidyPretty": "199.77168949 DECKX",
+    "terminalHeight": 1839599,
+    "terminalYears": 35,
+    "schedule": [
+      {
+        "era": 0,
+        "year": 1,
+        "startHeight": 0,
+        "subsidy": "19977168949",
+        "subsidyPretty": "199.77168949 DECKX",
+        "cumulative": "1049999999959440",
+        "cumulativePretty": "10499999.99959440 DECKX",
+        "percentOfCap": "50.0000"
+      },
+      {
+        "era": 1,
+        "year": 2,
+        "startHeight": 52560,
+        "subsidy": "9988584474",
+        "subsidyPretty": "99.88584474 DECKX",
+        "cumulative": "1574999999912880",
+        "cumulativePretty": "15749999.99912880 DECKX",
+        "percentOfCap": "75.0000"
+      },
+      {
+        "era": 2,
+        "year": 3,
+        "startHeight": 105120,
+        "subsidy": "4994292237",
+        "subsidyPretty": "49.94292237 DECKX",
+        "cumulative": "1837499999889600",
+        "cumulativePretty": "18374999.99889600 DECKX",
+        "percentOfCap": "87.5000"
+      },
+      {
+        "era": 3,
+        "year": 4,
+        "startHeight": 157680,
+        "subsidy": "2497146118",
+        "subsidyPretty": "24.97146118 DECKX",
+        "cumulative": "1968749999851680",
+        "cumulativePretty": "19687499.99851680 DECKX",
+        "percentOfCap": "93.7500"
+      },
+      {
+        "era": 4,
+        "year": 5,
+        "startHeight": 210240,
+        "subsidy": "1248573059",
+        "subsidyPretty": "12.48573059 DECKX",
+        "cumulative": "2034374999832720",
+        "cumulativePretty": "20343749.99832720 DECKX",
+        "percentOfCap": "96.8750"
+      },
+      {
+        "era": 5,
+        "year": 6,
+        "startHeight": 262800,
+        "subsidy": "624286529",
+        "subsidyPretty": "6.24286529 DECKX",
+        "cumulative": "2067187499796960",
+        "cumulativePretty": "20671874.99796960 DECKX",
+        "percentOfCap": "98.4375"
+      },
+      {
+        "era": 6,
+        "year": 7,
+        "startHeight": 315360,
+        "subsidy": "312143264",
+        "subsidyPretty": "3.12143264 DECKX",
+        "cumulative": "2083593749752800",
+        "cumulativePretty": "20835937.49752800 DECKX",
+        "percentOfCap": "99.2187"
+      },
+      {
+        "era": 7,
+        "year": 8,
+        "startHeight": 367920,
+        "subsidy": "156071632",
+        "subsidyPretty": "1.56071632 DECKX",
+        "cumulative": "2091796874730720",
+        "cumulativePretty": "20917968.74730720 DECKX",
+        "percentOfCap": "99.6094"
+      },
+      {
+        "era": 8,
+        "year": 9,
+        "startHeight": 420480,
+        "subsidy": "78035816",
+        "subsidyPretty": "0.78035816 DECKX",
+        "cumulative": "2095898437219680",
+        "cumulativePretty": "20958984.37219680 DECKX",
+        "percentOfCap": "99.8047"
+      },
+      {
+        "era": 9,
+        "year": 10,
+        "startHeight": 473040,
+        "subsidy": "39017908",
+        "subsidyPretty": "0.39017908 DECKX",
+        "cumulative": "2097949218464160",
+        "cumulativePretty": "20979492.18464160 DECKX",
+        "percentOfCap": "99.9023"
+      },
+      {
+        "era": 10,
+        "year": 11,
+        "startHeight": 525600,
+        "subsidy": "19508954",
+        "subsidyPretty": "0.19508954 DECKX",
+        "cumulative": "2098974609086400",
+        "cumulativePretty": "20989746.09086400 DECKX",
+        "percentOfCap": "99.9512"
+      },
+      {
+        "era": 11,
+        "year": 12,
+        "startHeight": 578160,
+        "subsidy": "9754477",
+        "subsidyPretty": "0.09754477 DECKX",
+        "cumulative": "2099487304397520",
+        "cumulativePretty": "20994873.04397520 DECKX",
+        "percentOfCap": "99.9756"
+      },
+      {
+        "era": 12,
+        "year": 13,
+        "startHeight": 630720,
+        "subsidy": "4877238",
+        "subsidyPretty": "0.04877238 DECKX",
+        "cumulative": "2099743652026800",
+        "cumulativePretty": "20997436.52026800 DECKX",
+        "percentOfCap": "99.9878"
+      },
+      {
+        "era": 13,
+        "year": 14,
+        "startHeight": 683280,
+        "subsidy": "2438619",
+        "subsidyPretty": "0.02438619 DECKX",
+        "cumulative": "2099871825841440",
+        "cumulativePretty": "20998718.25841440 DECKX",
+        "percentOfCap": "99.9939"
+      },
+      {
+        "era": 14,
+        "year": 15,
+        "startHeight": 735840,
+        "subsidy": "1219309",
+        "subsidyPretty": "0.01219309 DECKX",
+        "cumulative": "2099935912722480",
+        "cumulativePretty": "20999359.12722480 DECKX",
+        "percentOfCap": "99.9969"
+      },
+      {
+        "era": 15,
+        "year": 16,
+        "startHeight": 788400,
+        "subsidy": "609654",
+        "subsidyPretty": "0.00609654 DECKX",
+        "cumulative": "2099967956136720",
+        "cumulativePretty": "20999679.56136720 DECKX",
+        "percentOfCap": "99.9985"
+      },
+      {
+        "era": 16,
+        "year": 17,
+        "startHeight": 840960,
+        "subsidy": "304827",
+        "subsidyPretty": "0.00304827 DECKX",
+        "cumulative": "2099983977843840",
+        "cumulativePretty": "20999839.77843840 DECKX",
+        "percentOfCap": "99.9992"
+      },
+      {
+        "era": 17,
+        "year": 18,
+        "startHeight": 893520,
+        "subsidy": "152413",
+        "subsidyPretty": "0.00152413 DECKX",
+        "cumulative": "2099991988671120",
+        "cumulativePretty": "20999919.88671120 DECKX",
+        "percentOfCap": "99.9996"
+      },
+      {
+        "era": 18,
+        "year": 19,
+        "startHeight": 946080,
+        "subsidy": "76206",
+        "subsidyPretty": "0.00076206 DECKX",
+        "cumulative": "2099995994058480",
+        "cumulativePretty": "20999959.94058480 DECKX",
+        "percentOfCap": "99.9998"
+      },
+      {
+        "era": 19,
+        "year": 20,
+        "startHeight": 998640,
+        "subsidy": "38103",
+        "subsidyPretty": "0.00038103 DECKX",
+        "cumulative": "2099997996752160",
+        "cumulativePretty": "20999979.96752160 DECKX",
+        "percentOfCap": "99.9999"
+      },
+      {
+        "era": 20,
+        "year": 21,
+        "startHeight": 1051200,
+        "subsidy": "19051",
+        "subsidyPretty": "0.00019051 DECKX",
+        "cumulative": "2099998998072720",
+        "cumulativePretty": "20999989.98072720 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 21,
+        "year": 22,
+        "startHeight": 1103760,
+        "subsidy": "9525",
+        "subsidyPretty": "0.00009525 DECKX",
+        "cumulative": "2099999498706720",
+        "cumulativePretty": "20999994.98706720 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 22,
+        "year": 23,
+        "startHeight": 1156320,
+        "subsidy": "4762",
+        "subsidyPretty": "0.00004762 DECKX",
+        "cumulative": "2099999748997440",
+        "cumulativePretty": "20999997.48997440 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 23,
+        "year": 24,
+        "startHeight": 1208880,
+        "subsidy": "2381",
+        "subsidyPretty": "0.00002381 DECKX",
+        "cumulative": "2099999874142800",
+        "cumulativePretty": "20999998.74142800 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 24,
+        "year": 25,
+        "startHeight": 1261440,
+        "subsidy": "1190",
+        "subsidyPretty": "0.00001190 DECKX",
+        "cumulative": "2099999936689200",
+        "cumulativePretty": "20999999.36689200 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 25,
+        "year": 26,
+        "startHeight": 1314000,
+        "subsidy": "595",
+        "subsidyPretty": "0.00000595 DECKX",
+        "cumulative": "2099999967962400",
+        "cumulativePretty": "20999999.67962400 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 26,
+        "year": 27,
+        "startHeight": 1366560,
+        "subsidy": "297",
+        "subsidyPretty": "0.00000297 DECKX",
+        "cumulative": "2099999983572720",
+        "cumulativePretty": "20999999.83572720 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 27,
+        "year": 28,
+        "startHeight": 1419120,
+        "subsidy": "148",
+        "subsidyPretty": "0.00000148 DECKX",
+        "cumulative": "2099999991351600",
+        "cumulativePretty": "20999999.91351600 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 28,
+        "year": 29,
+        "startHeight": 1471680,
+        "subsidy": "74",
+        "subsidyPretty": "0.00000074 DECKX",
+        "cumulative": "2099999995241040",
+        "cumulativePretty": "20999999.95241040 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 29,
+        "year": 30,
+        "startHeight": 1524240,
+        "subsidy": "37",
+        "subsidyPretty": "0.00000037 DECKX",
+        "cumulative": "2099999997185760",
+        "cumulativePretty": "20999999.97185760 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 30,
+        "year": 31,
+        "startHeight": 1576800,
+        "subsidy": "18",
+        "subsidyPretty": "0.00000018 DECKX",
+        "cumulative": "2099999998131840",
+        "cumulativePretty": "20999999.98131840 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 31,
+        "year": 32,
+        "startHeight": 1629360,
+        "subsidy": "9",
+        "subsidyPretty": "0.00000009 DECKX",
+        "cumulative": "2099999998604880",
+        "cumulativePretty": "20999999.98604880 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 32,
+        "year": 33,
+        "startHeight": 1681920,
+        "subsidy": "4",
+        "subsidyPretty": "0.00000004 DECKX",
+        "cumulative": "2099999998815120",
+        "cumulativePretty": "20999999.98815120 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 33,
+        "year": 34,
+        "startHeight": 1734480,
+        "subsidy": "2",
+        "subsidyPretty": "0.00000002 DECKX",
+        "cumulative": "2099999998920240",
+        "cumulativePretty": "20999999.98920240 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 34,
+        "year": 35,
+        "startHeight": 1787040,
+        "subsidy": "1",
+        "subsidyPretty": "0.00000001 DECKX",
+        "cumulative": "2099999998972800",
+        "cumulativePretty": "20999999.98972800 DECKX",
+        "percentOfCap": "100.0000"
+      },
+      {
+        "era": 35,
+        "year": 36,
+        "startHeight": 1839600,
+        "subsidy": "0",
+        "subsidyPretty": "0.00000000 DECKX",
+        "cumulative": "2099999998972800",
+        "cumulativePretty": "20999999.98972800 DECKX",
+        "percentOfCap": "100.0000"
+      }
+    ]
+  },
+  "contracts": [
+    {
+      "name": "TimeVault",
+      "summary": "Releases a guarded output to one fixed beneficiary, and only once the chain reaches a fixed height.",
+      "calldata": [],
+      "storage": [
+        {
+          "slot": 0,
+          "name": "unlockHeight",
+          "meaning": "block height at or after which the spend is allowed"
+        },
+        {
+          "slot": 1,
+          "name": "beneficiary",
+          "meaning": "address word that must receive an output"
+        },
+        {
+          "slot": 2,
+          "name": "attempts",
+          "meaning": "every release attempt, approved or not"
+        }
+      ],
+      "approvesWhen": [
+        "the current block height is greater than or equal to `unlockHeight`"
+      ],
+      "caveats": [
+        "There is no cancel path. Once funded, the output is unreachable until the height passes — including by the depositor.",
+        "Block height is not wall-clock time. A stalled chain delays the unlock."
+      ]
+    },
+    {
+      "name": "Escrow",
+      "summary": "Two-party escrow with an arbiter and a refund deadline. Release pays the seller; refund pays the buyer.",
+      "calldata": [
+        "[0] action — 1 = release to seller, 2 = refund to buyer"
+      ],
+      "storage": [
+        {
+          "slot": 0,
+          "name": "deadline",
+          "meaning": "height after which the buyer may self-refund"
+        },
+        {
+          "slot": 1,
+          "name": "seller",
+          "meaning": "address word paid on release"
+        },
+        {
+          "slot": 2,
+          "name": "buyer",
+          "meaning": "address word paid on refund"
+        },
+        {
+          "slot": 3,
+          "name": "arbiter",
+          "meaning": "may force either outcome at any time"
+        },
+        {
+          "slot": 4,
+          "name": "settled",
+          "meaning": "1 once an outcome has been approved"
+        }
+      ],
+      "approvesWhen": [
+        "action = 1 (release) and the caller is the buyer or the arbiter",
+        "action = 2 (refund) and the caller is the seller or the arbiter",
+        "action = 2 (refund) and the caller is the buyer and the deadline has passed"
+      ],
+      "caveats": [
+        "The arbiter is fully trusted for both outcomes. This is a trust-minimised escrow, not a trustless one.",
+        "The deadline is the buyer's only unilateral exit. Choose it deliberately.",
+        "`settled` records that an outcome happened; it does not prevent a second guarded output from being released the same way."
+      ]
+    },
+    {
+      "name": "Vesting",
+      "summary": "Releases guarded outputs to one beneficiary in tranches: nothing before the cliff, then one tranche per interval.",
+      "calldata": [],
+      "storage": [
+        {
+          "slot": 0,
+          "name": "cliffHeight",
+          "meaning": "height of the first possible release"
+        },
+        {
+          "slot": 1,
+          "name": "beneficiary",
+          "meaning": "address word that must receive an output"
+        },
+        {
+          "slot": 2,
+          "name": "interval",
+          "meaning": "blocks between tranches"
+        },
+        {
+          "slot": 3,
+          "name": "tranches",
+          "meaning": "total number of tranches"
+        },
+        {
+          "slot": 4,
+          "name": "released",
+          "meaning": "tranches released so far"
+        }
+      ],
+      "approvesWhen": [
+        "released < tranches, and",
+        "height >= cliff + released × interval"
+      ],
+      "caveats": [
+        "Each approved spend counts as one tranche regardless of the amount. Fund the covenant with one output per tranche, of equal size.",
+        "There is no clawback. An employee who leaves still vests on schedule unless the arrangement is enforced off-chain."
+      ]
+    },
+    {
+      "name": "MultiSig",
+      "summary": "M-of-N approval. Each owner calls once to register approval; the spend is authorised on the Mth distinct approval.",
+      "calldata": [],
+      "storage": [
+        {
+          "slot": 0,
+          "name": "threshold",
+          "meaning": "M — approvals required"
+        },
+        {
+          "slot": 1,
+          "name": "beneficiary",
+          "meaning": "address word that must receive an output"
+        },
+        {
+          "slot": 2,
+          "name": "approvals",
+          "meaning": "distinct owners who have approved so far"
+        },
+        {
+          "slot": 10,
+          "name": "owners[i]",
+          "meaning": "owner address words, slots 10..10+N-1"
+        },
+        {
+          "slot": -1,
+          "name": "<callerWord>",
+          "meaning": "set to 1 once that owner has approved (keyed by address word)"
+        }
+      ],
+      "approvesWhen": [
+        "the caller is a listed owner, and their approval brings the distinct count to M or more"
+      ],
+      "caveats": [
+        "Approvals accumulate across transactions. Each approving call costs a fee, so M-of-N costs M transactions.",
+        "There is no revocation and no expiry. An approval given today still counts a year later.",
+        "The beneficiary is fixed at deployment. Owners approve a payee, not an arbitrary spend."
+      ]
+    },
+    {
+      "name": "AtomicSwap",
+      "summary": "Hash-time-locked covenant. The receiver claims by revealing a preimage; the sender reclaims after a timeout.",
+      "calldata": [
+        "[0] preimage — a 256-bit word whose SHA-256 equals `hash`"
+      ],
+      "storage": [
+        {
+          "slot": 0,
+          "name": "timeout",
+          "meaning": "height after which the refund path opens"
+        },
+        {
+          "slot": 1,
+          "name": "receiver",
+          "meaning": "paid when the preimage is revealed"
+        },
+        {
+          "slot": 2,
+          "name": "refund",
+          "meaning": "paid after the timeout"
+        },
+        {
+          "slot": 3,
+          "name": "hash",
+          "meaning": "SHA-256 of the secret, as a 256-bit word"
+        },
+        {
+          "slot": 4,
+          "name": "revealed",
+          "meaning": "the preimage, once someone has published it"
+        }
+      ],
+      "approvesWhen": [
+        "calldata[0] hashes to `hash` — pays the receiver, at any height",
+        "the height is past `timeout` — pays the refund address"
+      ],
+      "caveats": [
+        "Revealing the preimage on this chain reveals it to everyone. That is the point for a cross-chain swap, and a privacy leak for anything else — the same reason Lightning is migrating from HTLCs to PTLCs.",
+        "The timeout must give the counterparty enough time on the other chain. Too short and the swap becomes a free option against you.",
+        "Once past the timeout, the refund path stays open even if the preimage is later revealed — first to broadcast wins."
+      ]
+    }
+  ],
+  "genesis": {
+    "hash": "000033be141b2fc85b4df117dc41c733f2b4d83c29b9d55d84ac8db96670985c",
+    "merkleRoot": "d4b653e17f1ddf4e3e812bde14b42ae06a73581f26b3cc7b7e9db447a407b8a3",
+    "stateRoot": "a15a98f254af721b869de1bc644f4661e2da9848b77f8fbdae8b06f4d4854ef8",
+    "time": 1785628800,
+    "timeIso": "2026-08-02T00:00:00.000Z",
+    "bits": "0x1f00ffff",
+    "target": "0xffff00000000000000000000000000000000000000000000000000000000",
+    "nonce": 11963,
+    "extraNonce": 0,
+    "coinbaseTxid": "d4b653e17f1ddf4e3e812bde14b42ae06a73581f26b3cc7b7e9db447a407b8a3",
+    "memo": "REKT 02/Aug/2026 Every exit liquidity was once someone conviction",
+    "reward": "19977168949",
+    "rewardPretty": "199.77168949 DECKX",
+    "address": "dxc1quefq28ftzaezr56muhlngz0v9g6j9pr0j3xf5v",
+    "mineMs": 223,
+    "expectedAttempts": 65536
+  },
+  "tip": {
+    "height": 110,
+    "hash": "0000caf6c2785dd1ae342e3fd9a6cf0a24251ded962d2f3ddf8a4e2510b0e36c",
+    "chainWork": "7274607",
+    "utxoCount": 117,
+    "contracts": 1
+  },
+  "supply": {
+    "utxoTotal": "2217465753339",
+    "utxoTotalPretty": "22174.65753339 DECKX",
+    "expectedSubsidy": "2217465753339",
+    "balanced": true
+  },
+  "timeline": [
+    {
+      "step": 1,
+      "title": "Genesis mined",
+      "detail": "000033be141b2fc85b4df117dc41c733f2b4d83c29b9d55d84ac8db96670985c · bits 0x1f00ffff · 223ms",
+      "txid": "d4b653e17f1ddf4e3e812bde14b42ae06a73581f26b3cc7b7e9db447a407b8a3",
+      "height": 0
+    },
+    {
+      "step": 2,
+      "title": "Coinbase matured",
+      "detail": "100 blocks mined in 95655ms · tip height 100",
+      "height": 100
+    },
+    {
+      "step": 3,
+      "title": "First transaction",
+      "detail": "30.00000000 DECKX from genesis → alice · fee 5000 zaps",
+      "txid": "b03d7347db686c41c2fe268f64ddc6d7c008fb5c656c5ad0638b103cbf37f5b9",
+      "height": 101
+    },
+    {
+      "step": 4,
+      "title": "Contract deployed",
+      "detail": "REKT Vault at dxc1p3e5xwd9ln5g4gfhe5qr8hfsq8u2lyfnkpuarlt · unlocks at height 105 · beneficiary carol",
+      "txid": "d3b04ceb9031ad1c4e087a5398c192b0e4f4dd6b342540620378c43974538ed2",
+      "height": 102
+    },
+    {
+      "step": 5,
+      "title": "Covenant refuses early spend",
+      "detail": "rejected — covenant refused: contract did not authorise this spend"
+    },
+    {
+      "step": 6,
+      "title": "Covenant releases",
+      "detail": "vault paid 5.00000000 DECKX to carol at height 106 · gas 3869 · no key ever signed for the vault",
+      "txid": "951e9f6661e9d835062375b952d88a07a9b6be4412127f23c2e4caf9d482e391",
+      "height": 106
+    },
+    {
+      "step": 7,
+      "title": "Volt channels opened",
+      "detail": "alice↔bob and bob↔carol · 8.00000000 DECKX total capacity · 2 on-chain transactions",
+      "txid": "2df758e170be06f37f06ae2980188d5773e2cf0b1a1d1aaf490029ecc57008d5",
+      "height": 107
+    },
+    {
+      "step": 8,
+      "title": "Routed payment settled",
+      "detail": "alice → bob → carol · 0.75031500 DECKX sent · 31500 zaps routing fee · 298ms · 0 on-chain transactions"
+    },
+    {
+      "step": 9,
+      "title": "Micro-payment burst",
+      "detail": "12 further routed payments · channel now at commitment #26 · still 0 on-chain transactions"
+    },
+    {
+      "step": 10,
+      "title": "Penalty enforced",
+      "detail": "alice broadcast commitment #1; bob swept 3.24967500 DECKX — the entire channel",
+      "txid": "5e337804d4602f5f4e6ab58d2b1d8ee06bddf457d6007c8423f0db2d6ab26f99",
+      "height": 109
+    },
+    {
+      "step": 11,
+      "title": "Cooperative close",
+      "detail": "bob↔carol settled to L1 in one transaction · 26 off-chain states collapsed",
+      "txid": "c3f3d485737baee5d83b93ef0ff34f746003b7d4c10de09ff131d79634df6ada",
+      "height": 110
+    },
+    {
+      "step": 12,
+      "title": "Supply audit",
+      "detail": "balanced — 22174.65753339 DECKX in existence, exactly the sum of 111 subsidies"
+    }
+  ],
+  "blocks": [
+    {
+      "height": 0,
+      "hash": "000033be141b2fc85b4df117dc41c733f2b4d83c29b9d55d84ac8db96670985c",
+      "prevHash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "merkleRoot": "d4b653e17f1ddf4e3e812bde14b42ae06a73581f26b3cc7b7e9db447a407b8a3",
+      "stateRoot": "a15a98f254af721b869de1bc644f4661e2da9848b77f8fbdae8b06f4d4854ef8",
+      "time": 1785628800,
+      "bits": "0x1f00ffff",
+      "nonce": 11963,
+      "txCount": 1,
+      "subsidy": "19977168949",
+      "transactions": [
+        {
+          "txid": "d4b653e17f1ddf4e3e812bde14b42ae06a73581f26b3cc7b7e9db447a407b8a3",
+          "wtxid": "02a2f5d7a0a556d9f8790417b6e24ceb630a4827b5491e8ae8d32e7e565ce3a0",
+          "kind": "coinbase",
+          "height": 0,
+          "inputs": [],
+          "outputs": [
+            {
+              "value": "19977168949",
+              "pretty": "199.77168949 DECKX",
+              "address": "dxc1quefq28ftzaezr56muhlngz0v9g6j9pr0j3xf5v",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "REKT 02/Aug/2026 Every exit liquidity was once someone conviction",
+          "contract": null
+        }
+      ]
+    },
+    {
+      "height": 101,
+      "hash": "000080a0d1f240e7c112122346ea3d73f8004ca46f1ffbc00b055b995d081bbb",
+      "prevHash": "000005af0203c4a8f2438f51d1b8157c0440a0cf0879c5db32f1459afbb11b06",
+      "merkleRoot": "d68611ea9fa266e0836a8c8883f9af14cd878a19c789b5e6c89e0022aee2f96c",
+      "stateRoot": "5b2cb4eb0cc6f85da20ff3cc65f2c0fd99ad404920d54a45a48dc8111cf58fa6",
+      "time": 1785689400,
+      "bits": "0x1f00ffff",
+      "nonce": 22044,
+      "txCount": 2,
+      "subsidy": "19977168949",
+      "transactions": [
+        {
+          "txid": "f7abdbc976465c3026500954b7e81b67eb1bee5a020f42701d086372cfd99fff",
+          "wtxid": "a24163ff1ff63ba2450f35e694f2fbff65c95521917c70a13b1f4e797fce9ae3",
+          "kind": "coinbase",
+          "height": 101,
+          "inputs": [],
+          "outputs": [
+            {
+              "value": "19977173949",
+              "pretty": "199.77173949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "deckx/101",
+          "contract": null
+        },
+        {
+          "txid": "b03d7347db686c41c2fe268f64ddc6d7c008fb5c656c5ad0638b103cbf37f5b9",
+          "wtxid": "86eec92ac972a0465f3f7a425b7daa33b5e6a4693eb4678e3503aebb0dfd6e0d",
+          "kind": "transfer",
+          "height": 101,
+          "inputs": [
+            {
+              "outpoint": "d4b653e17f1ddf4e…:0",
+              "sequence": 4294967295,
+              "hasCosign": false,
+              "hasPreimage": false
+            }
+          ],
+          "outputs": [
+            {
+              "value": "3000000000",
+              "pretty": "30.00000000 DECKX",
+              "address": "dxc1qvsjgpjv5uw7a3n3mfmknpqh9s5t3rv9v3shtlc",
+              "script": "p2pkh"
+            },
+            {
+              "value": "16977163949",
+              "pretty": "169.77163949 DECKX",
+              "address": "dxc1quefq28ftzaezr56muhlngz0v9g6j9pr0j3xf5v",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "first spend from the genesis coinbase",
+          "contract": null
+        }
+      ]
+    },
+    {
+      "height": 102,
+      "hash": "00006c09ff1c4f77bb77d3c1eed89e65524eac3ea14f234f1ce13a9d220d6e47",
+      "prevHash": "000080a0d1f240e7c112122346ea3d73f8004ca46f1ffbc00b055b995d081bbb",
+      "merkleRoot": "b349e651e6dd1352ab70e25c8fd3eb4a19a518f9cec909e48be2ebb95954117e",
+      "stateRoot": "68a3badc8e342126ed969424b716567f3524244c305ee03bddb7fee710fd4d9a",
+      "time": 1785690000,
+      "bits": "0x1f00ffff",
+      "nonce": 13132,
+      "txCount": 2,
+      "subsidy": "19977168949",
+      "transactions": [
+        {
+          "txid": "d26e7234aa9377753dbc4b90dc52f715064a2a8cc493f4298c49493d5915c3ff",
+          "wtxid": "d9801b008868ad570c0725070b2128ad89705a6f51d58aa04e5fd4315292eb53",
+          "kind": "coinbase",
+          "height": 102,
+          "inputs": [],
+          "outputs": [
+            {
+              "value": "19977368949",
+              "pretty": "199.77368949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "deckx/102",
+          "contract": null
+        },
+        {
+          "txid": "d3b04ceb9031ad1c4e087a5398c192b0e4f4dd6b342540620378c43974538ed2",
+          "wtxid": "39e26b41c71d1968e8a13b14a5df3d19cb5e4cfd5064e3f26691fa4a7986c4a7",
+          "kind": "deploy",
+          "height": 102,
+          "inputs": [
+            {
+              "outpoint": "b03d7347db686c41…:0",
+              "sequence": 4294967295,
+              "hasCosign": false,
+              "hasPreimage": false
+            }
+          ],
+          "outputs": [
+            {
+              "value": "500000000",
+              "pretty": "5.00000000 DECKX",
+              "address": "dxc1p3e5xwd9ln5g4gfhe5qr8hfsq8u2lyfnkpuarlt",
+              "script": "p2pkh"
+            },
+            {
+              "value": "2499800000",
+              "pretty": "24.99800000 DECKX",
+              "address": "dxc1qvsjgpjv5uw7a3n3mfmknpqh9s5t3rv9v3shtlc",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "deploy REKT vault",
+          "contract": {
+            "target": null,
+            "codeSize": 111,
+            "gasLimit": 200000,
+            "gasPrice": "1",
+            "nonce": 0
+          }
+        }
+      ]
+    },
+    {
+      "height": 106,
+      "hash": "00003e3d6a227aa9ef9f5a28c1fd6ec4382ff1224b562e303a6d694793518772",
+      "prevHash": "00009452b0d9805890e125c75e12aa65c0d9e7c93b4e19a26d318c7422586801",
+      "merkleRoot": "6530495bb52bf16b4ff286f981512215d4b4d6b4dcf1cacb7c0105e24ab44639",
+      "stateRoot": "352f90029d5319266bde3096b6facd84ba50bd1e733b83eeca3b39f88bc99133",
+      "time": 1785692400,
+      "bits": "0x1f00ffff",
+      "nonce": 76379,
+      "txCount": 2,
+      "subsidy": "19977168949",
+      "transactions": [
+        {
+          "txid": "96f959632e6e8586f549345d2d3935f652f88288b9bbc74b6a8a8288a2d49807",
+          "wtxid": "39cceecffe49bdeef37a619d8327a7255434e9d29dcb17a18b9c3bb1457089c6",
+          "kind": "coinbase",
+          "height": 106,
+          "inputs": [],
+          "outputs": [
+            {
+              "value": "19977368949",
+              "pretty": "199.77368949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "deckx/106",
+          "contract": null
+        },
+        {
+          "txid": "951e9f6661e9d835062375b952d88a07a9b6be4412127f23c2e4caf9d482e391",
+          "wtxid": "1539870bce0f9fa27b5efda79b6620fc6e1e6818d54a94520600c637e1d68d1d",
+          "kind": "call",
+          "height": 106,
+          "inputs": [
+            {
+              "outpoint": "d3b04ceb9031ad1c…:0",
+              "sequence": 4294967295,
+              "hasCosign": false,
+              "hasPreimage": false
+            },
+            {
+              "outpoint": "d3b04ceb9031ad1c…:1",
+              "sequence": 4294967295,
+              "hasCosign": false,
+              "hasPreimage": false
+            }
+          ],
+          "outputs": [
+            {
+              "value": "500000000",
+              "pretty": "5.00000000 DECKX",
+              "address": "dxc1qnzjnd7swc7ke5v6vnj5ex537q7lfnejgwxsj34",
+              "script": "p2pkh"
+            },
+            {
+              "value": "2499600000",
+              "pretty": "24.99600000 DECKX",
+              "address": "dxc1qvsjgpjv5uw7a3n3mfmknpqh9s5t3rv9v3shtlc",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "release REKT vault",
+          "contract": {
+            "target": "dxc1p3e5xwd9ln5g4gfhe5qr8hfsq8u2lyfnkpuarlt",
+            "codeSize": 0,
+            "gasLimit": 200000,
+            "gasPrice": "1",
+            "nonce": 1
+          }
+        }
+      ]
+    },
+    {
+      "height": 107,
+      "hash": "00004c139197cdd994a2cfa4907ff093566ad6aefac3bf2f9cae400c1f9658f4",
+      "prevHash": "00003e3d6a227aa9ef9f5a28c1fd6ec4382ff1224b562e303a6d694793518772",
+      "merkleRoot": "68e4ccb6691831f997e52da011eb3fcebb1cbbf6ecb6c2e10891722edb4e527d",
+      "stateRoot": "c8e06a044e76b4662929d93f7d4061a5da68b872b753dbca1838ae2abf3615d5",
+      "time": 1785693000,
+      "bits": "0x1f00ffff",
+      "nonce": 84344,
+      "txCount": 3,
+      "subsidy": "19977168949",
+      "transactions": [
+        {
+          "txid": "a782ccaaf481f1478fcf5b27dedccc9f7984101eb3d7c00a6e65059084d3778b",
+          "wtxid": "954c9a736e857af844a6c6d8e9dd0c9d1a571e9123089ec0d369c2c820ded30f",
+          "kind": "coinbase",
+          "height": 107,
+          "inputs": [],
+          "outputs": [
+            {
+              "value": "19977170949",
+              "pretty": "199.77170949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "deckx/107",
+          "contract": null
+        },
+        {
+          "txid": "2df758e170be06f37f06ae2980188d5773e2cf0b1a1d1aaf490029ecc57008d5",
+          "wtxid": "3a5da650f2603c2ceb3175b1170c4e45b2785604f7c920a1ebe54bedef499c2b",
+          "kind": "transfer",
+          "height": 107,
+          "inputs": [
+            {
+              "outpoint": "a7155f58102095cb…:0",
+              "sequence": 4294967295,
+              "hasCosign": false,
+              "hasPreimage": false
+            }
+          ],
+          "outputs": [
+            {
+              "value": "400000000",
+              "pretty": "4.00000000 DECKX",
+              "address": "dxc1qj0k3twxc89kn02wj683ss5f5dpvt4sxr2vndac",
+              "script": "multisig2"
+            },
+            {
+              "value": "19577167949",
+              "pretty": "195.77167949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "volt:open:alice-bob",
+          "contract": null
+        },
+        {
+          "txid": "d48a59b5cdede27e0da314ef70233a26846b5444a525eee8f0b8de0ece3db9fe",
+          "wtxid": "51f16c21d8551d57e4db87df12f0b40db263249b58536da58d78bb44ef4a39f2",
+          "kind": "transfer",
+          "height": 107,
+          "inputs": [
+            {
+              "outpoint": "4546d7593a67d971…:0",
+              "sequence": 4294967295,
+              "hasCosign": false,
+              "hasPreimage": false
+            }
+          ],
+          "outputs": [
+            {
+              "value": "400000000",
+              "pretty": "4.00000000 DECKX",
+              "address": "dxc1qeer7xf47f9j27qsf2chfufw6h89wxvf8xk8wx5",
+              "script": "multisig2"
+            },
+            {
+              "value": "19577167949",
+              "pretty": "195.77167949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "volt:open:bob-carol",
+          "contract": null
+        }
+      ]
+    },
+    {
+      "height": 108,
+      "hash": "00003211f83b48ad1154a1321fa1be5719f9ff731792a6351b083299f7c9d3ad",
+      "prevHash": "00004c139197cdd994a2cfa4907ff093566ad6aefac3bf2f9cae400c1f9658f4",
+      "merkleRoot": "a7362024ea45034ee594a66c241ac03858ac7044019d3018d0047c13f0f75509",
+      "stateRoot": "9d47d3fe126ab17f5ad87a2eb02f547a577868761773266f065dd7db0eadd076",
+      "time": 1785693600,
+      "bits": "0x1f00ffff",
+      "nonce": 11573,
+      "txCount": 2,
+      "subsidy": "19977168949",
+      "transactions": [
+        {
+          "txid": "8835039ca19927733005d9081385d124c8ff9adc28ba5585461b636d4a8c4a31",
+          "wtxid": "9d74d7594ff533798ca544a85082f295f9bae5df15a1e48380876de6b83f5194",
+          "kind": "coinbase",
+          "height": 108,
+          "inputs": [],
+          "outputs": [
+            {
+              "value": "19977168949",
+              "pretty": "199.77168949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "deckx/108",
+          "contract": null
+        },
+        {
+          "txid": "b9cf42ce25ffc4d6cf182c4c1d358f7938c8d6ec200cda5a9b1083e89b35c25c",
+          "wtxid": "dca7f4188ef449cfa3cf5b5bf0c9cb458055da31cd6d9cbe3a77aa48aaca6a4e",
+          "kind": "transfer",
+          "height": 108,
+          "inputs": [
+            {
+              "outpoint": "2df758e170be06f3…:0",
+              "sequence": 8388609,
+              "hasCosign": true,
+              "hasPreimage": false
+            }
+          ],
+          "outputs": [
+            {
+              "value": "324968500",
+              "pretty": "3.24968500 DECKX",
+              "address": "dxc1qaucnr54ezwuw8tt4xqtpdgsx3sxry35zl7ahtv",
+              "script": "revocable"
+            },
+            {
+              "value": "75031500",
+              "pretty": "0.75031500 DECKX",
+              "address": "dxc1qwrszkza94xv92amalayx7ghj5xs5lk85ca0rq0",
+              "script": "htlc"
+            }
+          ],
+          "memo": "volt:alice-bob:1",
+          "contract": null
+        }
+      ]
+    },
+    {
+      "height": 109,
+      "hash": "0000b6159e6a7545d2599b921c6fd8548fe1abfa61a2d1147807b3a3c3bad4dc",
+      "prevHash": "00003211f83b48ad1154a1321fa1be5719f9ff731792a6351b083299f7c9d3ad",
+      "merkleRoot": "d014d993c780edf5d7e64b7fa4ae98e4f30ba495247b220e6a465c3a9889b036",
+      "stateRoot": "4bda7663385c588d98d91f084a3649aec456f50be82ea8c79c63039d151fd95b",
+      "time": 1785694200,
+      "bits": "0x1f00ffff",
+      "nonce": 77037,
+      "txCount": 2,
+      "subsidy": "19977168949",
+      "transactions": [
+        {
+          "txid": "f1ea464c2fdf5e93bdd6cd302dde8b86234df42a252a2d2e35fb67738acf1784",
+          "wtxid": "9d7cc3c7342b664272f181b200d96f1a56046c849d830b75c0a146284da8d7ba",
+          "kind": "coinbase",
+          "height": 109,
+          "inputs": [],
+          "outputs": [
+            {
+              "value": "19977169949",
+              "pretty": "199.77169949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "deckx/109",
+          "contract": null
+        },
+        {
+          "txid": "5e337804d4602f5f4e6ab58d2b1d8ee06bddf457d6007c8423f0db2d6ab26f99",
+          "wtxid": "67df84473adef8bb1227018b494474ad59ab24f8b129275d77ca3fc93ac57e83",
+          "kind": "transfer",
+          "height": 109,
+          "inputs": [
+            {
+              "outpoint": "b9cf42ce25ffc4d6…:0",
+              "sequence": 4294967295,
+              "hasCosign": false,
+              "hasPreimage": false
+            }
+          ],
+          "outputs": [
+            {
+              "value": "324967500",
+              "pretty": "3.24967500 DECKX",
+              "address": "dxc1qwrszkza94xv92amalayx7ghj5xs5lk85ca0rq0",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "volt:alice-bob:penalty:1",
+          "contract": null
+        }
+      ]
+    },
+    {
+      "height": 110,
+      "hash": "0000caf6c2785dd1ae342e3fd9a6cf0a24251ded962d2f3ddf8a4e2510b0e36c",
+      "prevHash": "0000b6159e6a7545d2599b921c6fd8548fe1abfa61a2d1147807b3a3c3bad4dc",
+      "merkleRoot": "636f149b053e011843bc697d299132ecf9678cc5ce336d259ea63668ae1cb994",
+      "stateRoot": "b5bf629a45daa1d3b30a6a01924d004b0f9cd9b6889f74d1bb625b31d5aab91b",
+      "time": 1785694800,
+      "bits": "0x1f00ffff",
+      "nonce": 53795,
+      "txCount": 2,
+      "subsidy": "19977168949",
+      "transactions": [
+        {
+          "txid": "6530cb891d53b5c110022cdafc72afac71d37060f7cc8b967280dab736e9c1a4",
+          "wtxid": "e4369ed04091229ad52efeb5e4377720f2b155a44aea73593c0597d9e16e0c41",
+          "kind": "coinbase",
+          "height": 110,
+          "inputs": [],
+          "outputs": [
+            {
+              "value": "19977169949",
+              "pretty": "199.77169949 DECKX",
+              "address": "dxc1q02thct4d7ggrpzsjpt3dlkwzxg0lcmmflw92hu",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "deckx/110",
+          "contract": null
+        },
+        {
+          "txid": "c3f3d485737baee5d83b93ef0ff34f746003b7d4c10de09ff131d79634df6ada",
+          "wtxid": "126fded92dfcebfbc11cd8001b78d57a16bf148792ebba1019038a4d50459bac",
+          "kind": "transfer",
+          "height": 110,
+          "inputs": [
+            {
+              "outpoint": "d48a59b5cdede27e…:0",
+              "sequence": 4294967295,
+              "hasCosign": true,
+              "hasPreimage": false
+            }
+          ],
+          "outputs": [
+            {
+              "value": "296499000",
+              "pretty": "2.96499000 DECKX",
+              "address": "dxc1qwrszkza94xv92amalayx7ghj5xs5lk85ca0rq0",
+              "script": "p2pkh"
+            },
+            {
+              "value": "103500000",
+              "pretty": "1.03500000 DECKX",
+              "address": "dxc1qxwcuyrqt2rqyss80xhql5y8rmn4sgkxv7hjjd6",
+              "script": "p2pkh"
+            }
+          ],
+          "memo": "volt:bob-carol:close",
+          "contract": null
+        }
+      ]
+    }
+  ],
+  "allBlockHeaders": [
+    {
+      "height": 0,
+      "hash": "000033be141b2fc85b4df117dc41c733f2b4d83c29b9d55d84ac8db96670985c",
+      "time": 1785628800,
+      "txCount": 1,
+      "nonce": 11963
+    },
+    {
+      "height": 1,
+      "hash": "0000893cc2f98e3d1e7283081c8e15106a7cc28b41398ade7399560466f9393b",
+      "time": 1785629400,
+      "txCount": 1,
+      "nonce": 4565
+    },
+    {
+      "height": 2,
+      "hash": "00004a3a27480bce38c889ac3d44bfc069f22ab7675ee1dec94e073134c7bdb5",
+      "time": 1785630000,
+      "txCount": 1,
+      "nonce": 33823
+    },
+    {
+      "height": 3,
+      "hash": "00002d67b15879d6bde907c5057e4ffd8d9e4e6e8f77bcb6c37999e15ed3941f",
+      "time": 1785630600,
+      "txCount": 1,
+      "nonce": 85728
+    },
+    {
+      "height": 4,
+      "hash": "000097107ede7785743fc2fedb3f959297a98e8161c473fe48d596b29bec092f",
+      "time": 1785631200,
+      "txCount": 1,
+      "nonce": 78562
+    },
+    {
+      "height": 5,
+      "hash": "0000e98e827f5cae258f2ecfedfa914d7501b83928590df472beda170ec13bfa",
+      "time": 1785631800,
+      "txCount": 1,
+      "nonce": 83850
+    },
+    {
+      "height": 6,
+      "hash": "00003f634cfc2ff5163ccf2a6d8782f13dc40996642a92e19e9c08efbec532ed",
+      "time": 1785632400,
+      "txCount": 1,
+      "nonce": 28489
+    },
+    {
+      "height": 7,
+      "hash": "0000a86bb40003b1c3dba36d7e7ccdd66cc22d8d0541f6dbbd3acdc27e634de9",
+      "time": 1785633000,
+      "txCount": 1,
+      "nonce": 17380
+    },
+    {
+      "height": 8,
+      "hash": "00003f4f1156d665a97315445484726e507f4f38b784088cdadcbae66f9d0779",
+      "time": 1785633600,
+      "txCount": 1,
+      "nonce": 137662
+    },
+    {
+      "height": 9,
+      "hash": "000016cc9132bd58bd15f8333fe23a93027629f5dc723546e6bac348fcdd7537",
+      "time": 1785634200,
+      "txCount": 1,
+      "nonce": 106113
+    },
+    {
+      "height": 10,
+      "hash": "00004d0898d4d5877a854776c16269700f6a1509a31993ac2f76badd072d93a2",
+      "time": 1785634800,
+      "txCount": 1,
+      "nonce": 79918
+    },
+    {
+      "height": 11,
+      "hash": "00004479df55998705baa1beae117ee256774b3d7faed846d83e564efd4f9f5e",
+      "time": 1785635400,
+      "txCount": 1,
+      "nonce": 22702
+    },
+    {
+      "height": 12,
+      "hash": "00008ee9f537a4acd38b942c6cbdbdca9b28441be149d04190dd5f8ef5c8c8cb",
+      "time": 1785636000,
+      "txCount": 1,
+      "nonce": 150722
+    },
+    {
+      "height": 13,
+      "hash": "0000953ce1936920bf282162e18bdc49b2ac1ac09677ad35ad1c31aa2be419db",
+      "time": 1785636600,
+      "txCount": 1,
+      "nonce": 598
+    },
+    {
+      "height": 14,
+      "hash": "000038a99713ae6f699e7a6aae1374a988e6f541baedfb1c13fe192bf13dc8bb",
+      "time": 1785637200,
+      "txCount": 1,
+      "nonce": 17328
+    },
+    {
+      "height": 15,
+      "hash": "00003dc10dfaace06832048ebb9e0a3b29797eafe708108c27ed6a4478f60176",
+      "time": 1785637800,
+      "txCount": 1,
+      "nonce": 6282
+    },
+    {
+      "height": 16,
+      "hash": "0000d72741d34e55c45afb442f2f67ef9f1ef96d12bc7257b790ba11fb7c4d5e",
+      "time": 1785638400,
+      "txCount": 1,
+      "nonce": 12530
+    },
+    {
+      "height": 17,
+      "hash": "00005b448e1a98591732b1298610ab0d4cf7164c1c26e068ad82d915027f77ed",
+      "time": 1785639000,
+      "txCount": 1,
+      "nonce": 29394
+    },
+    {
+      "height": 18,
+      "hash": "00002dad36657c910f53c3f1407d0fd944383ce0c4feec6690bcfab6b6a5cf67",
+      "time": 1785639600,
+      "txCount": 1,
+      "nonce": 35217
+    },
+    {
+      "height": 19,
+      "hash": "0000de33719d82f8cc9732ca80adeeb6b2ce6084eb89428d5d11dad35f8d71bb",
+      "time": 1785640200,
+      "txCount": 1,
+      "nonce": 4170
+    },
+    {
+      "height": 20,
+      "hash": "0000885c6b4bce670c5512a0bf553d58ff8f0c67f5c732c5785661396dd60293",
+      "time": 1785640800,
+      "txCount": 1,
+      "nonce": 74792
+    },
+    {
+      "height": 21,
+      "hash": "000072ce0faa94089d7ff3584053851b945d24fe5d6ae77006970f4418d31a34",
+      "time": 1785641400,
+      "txCount": 1,
+      "nonce": 17470
+    },
+    {
+      "height": 22,
+      "hash": "00007ecc5f2510bc7758d2195e7db1d9ce2912fb5ce942dc3e9e068688e43583",
+      "time": 1785642000,
+      "txCount": 1,
+      "nonce": 71933
+    },
+    {
+      "height": 23,
+      "hash": "0000867045d5aab40d510bd2297fe58eb07821b6e146c51508d477c81ea15435",
+      "time": 1785642600,
+      "txCount": 1,
+      "nonce": 35331
+    },
+    {
+      "height": 24,
+      "hash": "0000fc852150437a80bee7c97116e6b108705671933309b4bd180c5493b5faae",
+      "time": 1785643200,
+      "txCount": 1,
+      "nonce": 21823
+    },
+    {
+      "height": 25,
+      "hash": "00009b297682279e8a3bc6cde22d9cb85025749723452c4af85e6d7e2440ceb9",
+      "time": 1785643800,
+      "txCount": 1,
+      "nonce": 28982
+    },
+    {
+      "height": 26,
+      "hash": "0000e971b57c4b83c0d7341d5771b96216dfb5949ab7a68430b6b0077241d03c",
+      "time": 1785644400,
+      "txCount": 1,
+      "nonce": 3139
+    },
+    {
+      "height": 27,
+      "hash": "000023a86d77a359952301748d8f89cd0724ee42d5b522f9cc9062f018bb37e2",
+      "time": 1785645000,
+      "txCount": 1,
+      "nonce": 46136
+    },
+    {
+      "height": 28,
+      "hash": "00009891806e904fc3f87d3afa9b5f3157f2a37ed931c0b020d7171c1e92f082",
+      "time": 1785645600,
+      "txCount": 1,
+      "nonce": 133606
+    },
+    {
+      "height": 29,
+      "hash": "00005db9e78d55e0bde55bed80b4ba83aa38e0f7a4425759db31d0dfa0c5c50f",
+      "time": 1785646200,
+      "txCount": 1,
+      "nonce": 74869
+    },
+    {
+      "height": 30,
+      "hash": "0000029f72a3ba9e3e907901c62305029b8555f23a9f60b4f31ec4d7f304459e",
+      "time": 1785646800,
+      "txCount": 1,
+      "nonce": 187071
+    },
+    {
+      "height": 31,
+      "hash": "0000dd3f37acb46253821a4187d1db10aa456a3ed52f0354256fe6d3358c810d",
+      "time": 1785647400,
+      "txCount": 1,
+      "nonce": 4888
+    },
+    {
+      "height": 32,
+      "hash": "000031348dcaede6ac4bd02fd7761a2c92835e404d7b0024c74f2a9e87650fcb",
+      "time": 1785648000,
+      "txCount": 1,
+      "nonce": 164268
+    },
+    {
+      "height": 33,
+      "hash": "00007cf6e2019c04bbb3bef8933980709c73b0ade6e5de81630679c0ac6719cb",
+      "time": 1785648600,
+      "txCount": 1,
+      "nonce": 21520
+    },
+    {
+      "height": 34,
+      "hash": "0000e9aa9292e70a600b524e711926f8b16dc3ecfec2ec690c20d88a09a20ccd",
+      "time": 1785649200,
+      "txCount": 1,
+      "nonce": 11777
+    },
+    {
+      "height": 35,
+      "hash": "00004ab9de5d37c2c6b8ff61561fc552a16390c5cc51adbb9e896f8796a5bb7b",
+      "time": 1785649800,
+      "txCount": 1,
+      "nonce": 27727
+    },
+    {
+      "height": 36,
+      "hash": "0000da0c0b6d5351c435875b761e4f5aa3e7f7fab26d172bb833ad3adbe9710b",
+      "time": 1785650400,
+      "txCount": 1,
+      "nonce": 78533
+    },
+    {
+      "height": 37,
+      "hash": "0000a52cd6fca3c5ae23398e9ff7da2902586c8e260fb0cf8c94315b809f2160",
+      "time": 1785651000,
+      "txCount": 1,
+      "nonce": 547
+    },
+    {
+      "height": 38,
+      "hash": "000062d4670d8c24f8ae8e284b0308c2fdd546a8eb4f77f32dc45ae99a19bcd2",
+      "time": 1785651600,
+      "txCount": 1,
+      "nonce": 49382
+    },
+    {
+      "height": 39,
+      "hash": "000075dea3dfaa76489b1001340f9cec91943e045be3b5025547a2bbe172b339",
+      "time": 1785652200,
+      "txCount": 1,
+      "nonce": 5175
+    },
+    {
+      "height": 40,
+      "hash": "00009c653f0daf7d92fdfc65a40567123ce5f9d4fae5297c993565504f22ed72",
+      "time": 1785652800,
+      "txCount": 1,
+      "nonce": 37239
+    },
+    {
+      "height": 41,
+      "hash": "000017507372369d90470dcab7b0bc0b29f2ea9ab0bde11ba1956f57f5ac3569",
+      "time": 1785653400,
+      "txCount": 1,
+      "nonce": 6165
+    },
+    {
+      "height": 42,
+      "hash": "00009135c4ae1878560ee9c685d2a367fd805d69fb383acf9d9742a81fe462c4",
+      "time": 1785654000,
+      "txCount": 1,
+      "nonce": 251144
+    },
+    {
+      "height": 43,
+      "hash": "000011bccb2609738b7fa19b00b52abf4bf533c24f6262aed6cc7065ac344449",
+      "time": 1785654600,
+      "txCount": 1,
+      "nonce": 275561
+    },
+    {
+      "height": 44,
+      "hash": "00006162a64a5ea215949e0d85c40be811479cf22c69d274d39f02d30eb45e41",
+      "time": 1785655200,
+      "txCount": 1,
+      "nonce": 14727
+    },
+    {
+      "height": 45,
+      "hash": "0000dc4fef5f619c2872d6a99375258514fb9be8ddf81d68e78c58779d76fed2",
+      "time": 1785655800,
+      "txCount": 1,
+      "nonce": 30573
+    },
+    {
+      "height": 46,
+      "hash": "0000b02a83adc6d4c40e67cfe5208909e3da606ef2c10912acbaa6fb30051112",
+      "time": 1785656400,
+      "txCount": 1,
+      "nonce": 97849
+    },
+    {
+      "height": 47,
+      "hash": "000039cf24470732f0d269742702ce96dfaea8a098501e0af2f61e4fd2a463e9",
+      "time": 1785657000,
+      "txCount": 1,
+      "nonce": 3007
+    },
+    {
+      "height": 48,
+      "hash": "00005e16fe3193c88063c868ca169f2f7e6284837534c09f3be5e0df3b3d0a65",
+      "time": 1785657600,
+      "txCount": 1,
+      "nonce": 13862
+    },
+    {
+      "height": 49,
+      "hash": "0000094f84721eb6c3ae9a1414ce2f61ed6316c2c595d4858b50ac48e68d66c7",
+      "time": 1785658200,
+      "txCount": 1,
+      "nonce": 114103
+    },
+    {
+      "height": 50,
+      "hash": "000058e97db35e7048fe258f105a9fc3b2df948df72b59170a2e52fed4767467",
+      "time": 1785658800,
+      "txCount": 1,
+      "nonce": 37835
+    },
+    {
+      "height": 51,
+      "hash": "0000f7a2ef25f6445565d8b9266ee48bb46f0f2accd86cf8782dfb76d1559d25",
+      "time": 1785659400,
+      "txCount": 1,
+      "nonce": 40288
+    },
+    {
+      "height": 52,
+      "hash": "00003b84c8c4544d576fa5a146506d9a4d11b011d92470a5ef14d903a8fa65d2",
+      "time": 1785660000,
+      "txCount": 1,
+      "nonce": 188052
+    },
+    {
+      "height": 53,
+      "hash": "00001bad39b131e315d70eb8291a59473e45664104dc9e7855fe55bd92fcd6d0",
+      "time": 1785660600,
+      "txCount": 1,
+      "nonce": 61133
+    },
+    {
+      "height": 54,
+      "hash": "00003446a34cb7d5096daad2d9ee08f00e456acff0e6a2e2ea721e72b535c536",
+      "time": 1785661200,
+      "txCount": 1,
+      "nonce": 51834
+    },
+    {
+      "height": 55,
+      "hash": "0000e52a43209ac5e198482b9dffc3ad89eca83d9a26bfcb86c43ca0abbbc7f9",
+      "time": 1785661800,
+      "txCount": 1,
+      "nonce": 22569
+    },
+    {
+      "height": 56,
+      "hash": "0000982815e682584ed168dd38c3c10a4b4a879dcd70e250e5e0d7ecbbca2695",
+      "time": 1785662400,
+      "txCount": 1,
+      "nonce": 39344
+    },
+    {
+      "height": 57,
+      "hash": "00007fb18832986c349b72d9f256cc4af65ab32b97c2dddef4280f1055e6f84c",
+      "time": 1785663000,
+      "txCount": 1,
+      "nonce": 65762
+    },
+    {
+      "height": 58,
+      "hash": "000063494da8ca7bf5fd263b964e1e6816b27d63d825e7e6d6082aac3c6ceb09",
+      "time": 1785663600,
+      "txCount": 1,
+      "nonce": 44320
+    },
+    {
+      "height": 59,
+      "hash": "000034382f7b9899f146d56998b202cdd392ed299289293146587003aa554e5e",
+      "time": 1785664200,
+      "txCount": 1,
+      "nonce": 10037
+    },
+    {
+      "height": 60,
+      "hash": "00005b5324208e009eeaf9a161a673c4d04f89824a494d421b795e9353015db4",
+      "time": 1785664800,
+      "txCount": 1,
+      "nonce": 37215
+    },
+    {
+      "height": 61,
+      "hash": "00009ac282212ff172ac15710b15cd9e4a9d8ac4cd7209a9900950e8444958b5",
+      "time": 1785665400,
+      "txCount": 1,
+      "nonce": 133066
+    },
+    {
+      "height": 62,
+      "hash": "00008aa09bdcc1c809ca5ba32671fcbd897be58d5662fd9a3bc6ebd9ae78c224",
+      "time": 1785666000,
+      "txCount": 1,
+      "nonce": 2579
+    },
+    {
+      "height": 63,
+      "hash": "00009b6a556387e9907fad9e31a4e79eeefa4720dd93170e60b879e5eb47bd95",
+      "time": 1785666600,
+      "txCount": 1,
+      "nonce": 16179
+    },
+    {
+      "height": 64,
+      "hash": "00000a644686d8f79d15123178a3dfa165d28291dc2c0b024c2011df2c6c30c2",
+      "time": 1785667200,
+      "txCount": 1,
+      "nonce": 39800
+    },
+    {
+      "height": 65,
+      "hash": "00009ba6adb8cea9adcced8eab311b6e30c514c12db232061b1215ac1a4c0d13",
+      "time": 1785667800,
+      "txCount": 1,
+      "nonce": 107646
+    },
+    {
+      "height": 66,
+      "hash": "0000ff2905cc80551e8b513bce64e9d2451bd190c6b21586b9c2891df9b451fc",
+      "time": 1785668400,
+      "txCount": 1,
+      "nonce": 47919
+    },
+    {
+      "height": 67,
+      "hash": "0000672bf7a47edb19dbaa7b534ee9847c15035ea1ec2a5e876b71857cc3b677",
+      "time": 1785669000,
+      "txCount": 1,
+      "nonce": 74907
+    },
+    {
+      "height": 68,
+      "hash": "000095951590251d0e2f6667cc6fb95cec0ecb9105c59dabc9623e36f0854edb",
+      "time": 1785669600,
+      "txCount": 1,
+      "nonce": 3062
+    },
+    {
+      "height": 69,
+      "hash": "0000a352227ed8a1968783801c33207e79253d27f35e857117ac4ae3137c3e8b",
+      "time": 1785670200,
+      "txCount": 1,
+      "nonce": 29606
+    },
+    {
+      "height": 70,
+      "hash": "0000ed5621a4158c1fb246a646613fef1113e0570e5c98dff28bb99d46273661",
+      "time": 1785670800,
+      "txCount": 1,
+      "nonce": 72466
+    },
+    {
+      "height": 71,
+      "hash": "000086a1ec4799a9e650b9a61c13949e17bae09135a76f84a4dad7b3b58b64b4",
+      "time": 1785671400,
+      "txCount": 1,
+      "nonce": 373351
+    },
+    {
+      "height": 72,
+      "hash": "0000bbb28aa743ddc7dd809e1ea4a8361669363b085b88e139fd359190910c41",
+      "time": 1785672000,
+      "txCount": 1,
+      "nonce": 46266
+    },
+    {
+      "height": 73,
+      "hash": "0000b9202f1a2480b5e0883262e211394f45f35619d32ae921eb5b4975b96161",
+      "time": 1785672600,
+      "txCount": 1,
+      "nonce": 186150
+    },
+    {
+      "height": 74,
+      "hash": "0000153405634fbcaa10892f6b61fdbd544dbe98f81238c099ce6f25b8efa375",
+      "time": 1785673200,
+      "txCount": 1,
+      "nonce": 222719
+    },
+    {
+      "height": 75,
+      "hash": "00000b2de29dcb2c67e6ba9d1b540c1fd2f91d678286bae64dcd2e60457649a1",
+      "time": 1785673800,
+      "txCount": 1,
+      "nonce": 32629
+    },
+    {
+      "height": 76,
+      "hash": "00003883ec72a270e6d44ceca2edd5ae43108bc5894d0c33f82432bfc22ec9a3",
+      "time": 1785674400,
+      "txCount": 1,
+      "nonce": 59312
+    },
+    {
+      "height": 77,
+      "hash": "0000ef7ae7ea662a8ea9671b321aeb205e134984e5b8f0461655dc9336ae4fd4",
+      "time": 1785675000,
+      "txCount": 1,
+      "nonce": 178014
+    },
+    {
+      "height": 78,
+      "hash": "00002702cf9046d3b506a3440c036300fbd65f37c0cd30f976d639dd68a91927",
+      "time": 1785675600,
+      "txCount": 1,
+      "nonce": 334078
+    },
+    {
+      "height": 79,
+      "hash": "0000171ae4f14e1403a730f7188d001662e0578959622561dafbd1b558504682",
+      "time": 1785676200,
+      "txCount": 1,
+      "nonce": 30202
+    },
+    {
+      "height": 80,
+      "hash": "000044e61e20f28727de18e232eea34694d739b5ca427c9f9dcba832109485be",
+      "time": 1785676800,
+      "txCount": 1,
+      "nonce": 1153
+    },
+    {
+      "height": 81,
+      "hash": "000052a4d14ddd77576478b1aa0a916502256b4fe56368bb1eb07582c52cfd30",
+      "time": 1785677400,
+      "txCount": 1,
+      "nonce": 49840
+    },
+    {
+      "height": 82,
+      "hash": "0000faf6126126b0993b41addabf421b35683d1457b65bbc732a18c1a0761bf3",
+      "time": 1785678000,
+      "txCount": 1,
+      "nonce": 24180
+    },
+    {
+      "height": 83,
+      "hash": "0000b5cc80e72f80eeca116a010bba3755dee6e3b38a5bcb95bf5c0f54c16bc8",
+      "time": 1785678600,
+      "txCount": 1,
+      "nonce": 62223
+    },
+    {
+      "height": 84,
+      "hash": "000079f6bddf5ddb7d9738102c6d04c5b89c6882bab11501ebde9173c963efff",
+      "time": 1785679200,
+      "txCount": 1,
+      "nonce": 50119
+    },
+    {
+      "height": 85,
+      "hash": "000075a761fd60130287ca1170824ad266712af5cb2c8937163ed1b56d5ae03e",
+      "time": 1785679800,
+      "txCount": 1,
+      "nonce": 28487
+    },
+    {
+      "height": 86,
+      "hash": "00002fbdc53f8dfe51d86eae94146dedb634ec5cad12a27812d41f5154c153ae",
+      "time": 1785680400,
+      "txCount": 1,
+      "nonce": 64894
+    },
+    {
+      "height": 87,
+      "hash": "00003cee6e543e7e12741b090a14bcdcc94736d0979e1f55d8c3e1d5c8f0f630",
+      "time": 1785681000,
+      "txCount": 1,
+      "nonce": 19971
+    },
+    {
+      "height": 88,
+      "hash": "0000de2e80a13a04fddc1912ca68d5eeb7b190421c92b15cfb02ea58df117a3c",
+      "time": 1785681600,
+      "txCount": 1,
+      "nonce": 104126
+    },
+    {
+      "height": 89,
+      "hash": "00002410cae7ff52e6cdcd058d295c39741267707ed97e80b159979f66dbe39a",
+      "time": 1785682200,
+      "txCount": 1,
+      "nonce": 4580
+    },
+    {
+      "height": 90,
+      "hash": "0000997067b42cba823572a664e00bcd1d5621522d9873bf5db80d29cd4713d9",
+      "time": 1785682800,
+      "txCount": 1,
+      "nonce": 11589
+    },
+    {
+      "height": 91,
+      "hash": "000044eb81d7a2b00109d5f7374e0da24e93482a7ecf334f2176fbdc23c40e66",
+      "time": 1785683400,
+      "txCount": 1,
+      "nonce": 34488
+    },
+    {
+      "height": 92,
+      "hash": "0000d0c8fc1f65d1b06ce3ef60824375ab866fe13206a3181e4c7adb83bc678c",
+      "time": 1785684000,
+      "txCount": 1,
+      "nonce": 12892
+    },
+    {
+      "height": 93,
+      "hash": "0000a92d839d3a04b19f53d2292b8684d43cf6d47d9acc4acb5b22d0208763a0",
+      "time": 1785684600,
+      "txCount": 1,
+      "nonce": 15845
+    },
+    {
+      "height": 94,
+      "hash": "00001e2473db3f362368a8f7d8815e13b88d5e0605826330707c19fce98c1e00",
+      "time": 1785685200,
+      "txCount": 1,
+      "nonce": 165889
+    },
+    {
+      "height": 95,
+      "hash": "0000b670cca686afc169851e3247afec0efdde8b8feb30adce82db86b217f61e",
+      "time": 1785685800,
+      "txCount": 1,
+      "nonce": 17425
+    },
+    {
+      "height": 96,
+      "hash": "0000b87a389400e4116a2f793e70f0935a6c19d6ae60a4119f9c4ffb79d41ec3",
+      "time": 1785686400,
+      "txCount": 1,
+      "nonce": 5262
+    },
+    {
+      "height": 97,
+      "hash": "00004c193a9e564ac3dba801a92c626b0bd3929deb9a763c5d79d3be0d3d67f3",
+      "time": 1785687000,
+      "txCount": 1,
+      "nonce": 58048
+    },
+    {
+      "height": 98,
+      "hash": "00003a702afd134e4f3108d8b0325e0f197f5cd3bb0841c91b752aa1e5c0f4af",
+      "time": 1785687600,
+      "txCount": 1,
+      "nonce": 22577
+    },
+    {
+      "height": 99,
+      "hash": "0000c1b5f95130164757f6d4910a897ebb4b45d9233521181cef110e405f1ee1",
+      "time": 1785688200,
+      "txCount": 1,
+      "nonce": 13811
+    },
+    {
+      "height": 100,
+      "hash": "000005af0203c4a8f2438f51d1b8157c0440a0cf0879c5db32f1459afbb11b06",
+      "time": 1785688800,
+      "txCount": 1,
+      "nonce": 51908
+    },
+    {
+      "height": 101,
+      "hash": "000080a0d1f240e7c112122346ea3d73f8004ca46f1ffbc00b055b995d081bbb",
+      "time": 1785689400,
+      "txCount": 2,
+      "nonce": 22044
+    },
+    {
+      "height": 102,
+      "hash": "00006c09ff1c4f77bb77d3c1eed89e65524eac3ea14f234f1ce13a9d220d6e47",
+      "time": 1785690000,
+      "txCount": 2,
+      "nonce": 13132
+    },
+    {
+      "height": 103,
+      "hash": "00007cc3b39e4b5b4c2e2ed01356b0f8308cd2c2c78e24cee627151ef68fbfd2",
+      "time": 1785690600,
+      "txCount": 1,
+      "nonce": 46635
+    },
+    {
+      "height": 104,
+      "hash": "00002a17b9607911f5896517220719f043eea4b27e6eb8e16ac8fdc1a6bebd64",
+      "time": 1785691200,
+      "txCount": 1,
+      "nonce": 3795
+    },
+    {
+      "height": 105,
+      "hash": "00009452b0d9805890e125c75e12aa65c0d9e7c93b4e19a26d318c7422586801",
+      "time": 1785691800,
+      "txCount": 1,
+      "nonce": 78359
+    },
+    {
+      "height": 106,
+      "hash": "00003e3d6a227aa9ef9f5a28c1fd6ec4382ff1224b562e303a6d694793518772",
+      "time": 1785692400,
+      "txCount": 2,
+      "nonce": 76379
+    },
+    {
+      "height": 107,
+      "hash": "00004c139197cdd994a2cfa4907ff093566ad6aefac3bf2f9cae400c1f9658f4",
+      "time": 1785693000,
+      "txCount": 3,
+      "nonce": 84344
+    },
+    {
+      "height": 108,
+      "hash": "00003211f83b48ad1154a1321fa1be5719f9ff731792a6351b083299f7c9d3ad",
+      "time": 1785693600,
+      "txCount": 2,
+      "nonce": 11573
+    },
+    {
+      "height": 109,
+      "hash": "0000b6159e6a7545d2599b921c6fd8548fe1abfa61a2d1147807b3a3c3bad4dc",
+      "time": 1785694200,
+      "txCount": 2,
+      "nonce": 77037
+    },
+    {
+      "height": 110,
+      "hash": "0000caf6c2785dd1ae342e3fd9a6cf0a24251ded962d2f3ddf8a4e2510b0e36c",
+      "time": 1785694800,
+      "txCount": 2,
+      "nonce": 53795
+    }
+  ],
+  "contract": {
+    "address": "dxc1p3e5xwd9ln5g4gfhe5qr8hfsq8u2lyfnkpuarlt",
+    "deployer": "dxc1qvsjgpjv5uw7a3n3mfmknpqh9s5t3rv9v3shtlc",
+    "deployedAt": 102,
+    "codeSize": 111,
+    "storage": {
+      "0": "105",
+      "1": "5144263455108763864581832496930142109020475495181264784846049229738740489627",
+      "2": "2"
+    },
+    "codeHex": "6000541561000c57610036565b60696000557f0b5f8cc87c058a1a9d2f49e6d9c019419158ab41a7fbd679df5cc73a887b1d9b6001555b60025460010160025543600054111561005b57600060016344454e59a0600060006002f35b60015460016352454b54a060016001546002f3"
+  },
+  "volt": {
+    "stats": {
+      "nodes": 3,
+      "channels": 2,
+      "capacity": "800000000",
+      "openChannels": 1
+    },
+    "channels": [
+      {
+        "shortChannelId": "3312213776236676608",
+        "id": "alice-bob",
+        "state": "open",
+        "capacity": "400000000",
+        "capacityPretty": "4.00000000 DECKX",
+        "balanceA": "296439100",
+        "balanceB": "103560900",
+        "commitmentNumber": 26,
+        "revocations": 26,
+        "htlcsSettled": 13,
+        "fundingTxid": "2df758e170be06f37f06ae2980188d5773e2cf0b1a1d1aaf490029ecc57008d5",
+        "parties": [
+          "alice",
+          "bob"
+        ]
+      },
+      {
+        "shortChannelId": "15315152120205664768",
+        "id": "bob-carol",
+        "state": "closing",
+        "capacity": "400000000",
+        "capacityPretty": "4.00000000 DECKX",
+        "balanceA": "296500000",
+        "balanceB": "103500000",
+        "commitmentNumber": 26,
+        "revocations": 26,
+        "htlcsSettled": 13,
+        "fundingTxid": "d48a59b5cdede27e0da314ef70233a26846b5444a525eee8f0b8de0ece3db9fe",
+        "parties": [
+          "bob",
+          "carol"
+        ]
+      }
+    ],
+    "payment": {
+      "ok": true,
+      "amountSent": "75031500",
+      "amountSentPretty": "0.75031500 DECKX",
+      "feesPaid": "31500",
+      "hops": [
+        {
+          "shortChannelId": "3312213776236676608",
+          "amountToForward": "75031500",
+          "fee": "0",
+          "outgoingCltv": 205
+        },
+        {
+          "shortChannelId": "15315152120205664768",
+          "amountToForward": "75000000",
+          "fee": "31500",
+          "outgoingCltv": 125
+        }
+      ],
+      "forwards": [
+        {
+          "node": "bob",
+          "amountIn": "75031500",
+          "amountOut": "75000000",
+          "fee": "31500",
+          "cltv": 205
+        },
+        {
+          "node": "carol",
+          "amountIn": "75000000",
+          "amountOut": "0",
+          "fee": "0",
+          "cltv": 125
+        }
+      ],
+      "preimage": "a49043f6b5a0cc911e97fd64712037d5dd4f51e10e6b7da301e6e51ebc9bc323",
+      "onionBytes": 1366,
+      "settleMs": 298
+    },
+    "openChannelStates": [
+      "opening",
+      "open",
+      "closing",
+      "closed"
+    ]
+  },
+  "timings": {
+    "genesisMs": 223,
+    "maturityMs": 95655,
+    "paymentMs": 298
+  }
+}

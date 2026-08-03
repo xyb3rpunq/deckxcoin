@@ -1,0 +1,49 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'web/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never cancel a deploy mid-flight; queue instead.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sanity check — the explorer needs its data
+        run: |
+          test -f web/index.html
+          test -f web/data/chain.json
+          node -e "
+            const d = require('./web/data/chain.json');
+            if (!d.genesis?.hash) throw new Error('chain.json has no genesis hash');
+            if (!d.supply?.balanced) throw new Error('exported chain does not balance');
+            console.log('genesis', d.genesis.hash, '· blocks', d.blocks.length, '· ok');
+          "
+
+      - uses: actions/configure-pages@v5
+
+      # The site is already static — no build step, nothing to compile.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

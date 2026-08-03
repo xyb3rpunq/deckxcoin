@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: chain tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Native TypeScript type stripping — no build step in this repo.
+          node-version: '22.18'
+          cache: npm
+          cache-dependency-path: chain/package-lock.json
+
+      - name: Install
+        working-directory: chain
+        run: npm ci
+
+      - name: Test
+        working-directory: chain
+        run: npm test
+
+      - name: Genesis must be reproducible
+        working-directory: chain
+        run: node src/cli.ts verify
+
+      - name: Genesis hash must match the published constant
+        working-directory: chain
+        run: |
+          EXPECTED=000033be141b2fc85b4df117dc41c733f2b4d83c29b9d55d84ac8db96670985c
+          ACTUAL=$(node -e "
+            import('./src/chain.ts').then(async (c) => {
+              const b = await import('./src/block.ts');
+              process.stdout.write(b.blockHash(c.Blockchain.create().tip.header));
+            });
+          ")
+          echo "expected $EXPECTED"
+          echo "actual   $ACTUAL"
+          test "$EXPECTED" = "$ACTUAL"
