@@ -3,19 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "DeckxCoin (DECKX) — Bitcoin UTXO+PoW base layer fused with an Ethereum-style deterministic contract VM, plus Volt: a Lightning-style payment channel network.",
+  "description": "DeckxCoin (DECKX) — a full node: Bitcoin UTXO+PoW base layer fused with an Ethereum-style contract VM, a Lightning-style payment channel network, SQLite persistence, reorg handling, and a P2P protocol.",
   "license": "MIT",
   "engines": {
     "node": ">=22.18.0"
   },
+  "//engines": "22.18 for native TypeScript type stripping; node:sqlite for persistence ships with Node itself, so the node adds no dependencies.",
   "bin": {
-    "deckx": "./src/cli.ts"
+    "deckx": "./src/cli.ts",
+    "deckxd": "./src/deckxd.ts"
   },
   "scripts": {
     "test": "node --test \"test/*.test.ts\"",
     "cli": "node src/cli.ts",
     "genesis": "node src/cli.ts genesis",
-    "demo": "node scripts/demo.ts",
+    "node": "node src/deckxd.ts",
+    "testnet": "node scripts/testnet.ts",
     "export": "node scripts/export-web-data.ts"
   },
   "dependencies": {

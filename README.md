@@ -8,7 +8,8 @@
 
 **Bitcoin's UTXO value layer · an Ethereum-style contract layer that holds no balance · a Lightning-style channel network**
 
-[![tests](https://img.shields.io/badge/tests-110%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![tests](https://img.shields.io/badge/tests-146%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![node](https://img.shields.io/badge/full%20node-P2P%20%2B%20reorg%20%2B%20SQLite-38d9ff?style=flat-square&labelColor=0c0f18)](#-running-a-node)
 [![supply](https://img.shields.io/badge/supply-21%2C000%2C000%20DECKX-ff2d55?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![halving](https://img.shields.io/badge/halving-every%20365%20days-ffb020?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![contracts](https://img.shields.io/badge/covenants-5-8b6bff?style=flat-square&labelColor=0c0f18)](#-the-standard-covenant-library)
@@ -103,7 +104,8 @@ flowchart TB
 |---|---|---|
 | **Value** | Bitcoin whitepaper §§2–11 | UTXO set · secp256k1 · double-SHA256 PoW · 2016-block retarget · 21 M cap · 100-block coinbase maturity · Merkle root + SPV proofs |
 | **State** | Ethereum / EVM | 256-bit stack VM (44 opcodes) · persistent storage · gas metering · REVERT · logs · deterministic addresses · `stateRoot` in every header |
-| **Speed** | Poon–Dryja · BOLT 2/3/4/11 | 2-of-2 funding · asymmetric commitments · EC-derived revocation keys · HTLCs · penalty sweeps · Sphinx onion · signed invoices · fee-aware pathfinding |
+| **Speed** | Poon–Dryja · BOLT 2/3/4/11 | 2-of-2 funding · asymmetric commitments · EC-derived revocation keys · HTLCs · penalty sweeps · Sphinx onion · signed invoices · fee-aware pathfinding · **watchtower** |
+| **Network** | Bitcoin P2P | Framed wire protocol · handshake · addr gossip · inv/getdata relay · headers sync · orphan pool · ban scoring · **SQLite persistence** · **reorg with undo records** · JSON-RPC |
 
 ---
 
@@ -145,6 +147,91 @@ python docs/build-whitepaper.py    # rebuilds docs/DeckxCoin-Whitepaper.pdf
 </details>
 
 Three dependencies, all audited and minimal: `@noble/hashes`, `@noble/secp256k1`, `@scure/base`.
+Persistence uses `node:sqlite`, which ships with Node — the full node adds **zero** dependencies.
+
+---
+
+## 🌐 Running a node
+
+### A local testnet, one command
+
+```bash
+cd chain
+node scripts/testnet.ts --nodes 3 --interval 5
+```
+
+Three nodes, each with its own datadir, P2P port and RPC port. Node 1 mines; the others sync purely
+over TCP. Address gossip fills the chain of connections into a mesh, and the status line reports
+whether every node agrees on the **state root** — not just the tip hash, which can match while the
+UTXO sets differ.
+
+```
+11:58:32 node2 peer 127.0.0.1:29001
+11:58:34 node1 peer 127.0.0.1:29003
+11:58:35 node1 tip 1 2938c5cea89d5325…
+11:58:36 node2 tip 1 2938c5cea89d5325…
+11:58:36 node3 tip 1 2938c5cea89d5325…
+11:58:47 network  heights=[4, 4, 4] converged supply=998.85844745 DECKX
+```
+
+### A standalone daemon
+
+```bash
+node src/deckxd.ts --network testnet --datadir ./data/a --port 19333 --rpcport 19332 --mine dxc1q…
+node src/deckxd.ts --network testnet --datadir ./data/b --port 19334 --rpcport 19335 \
+     --connect 127.0.0.1:19333
+```
+
+`deckxd` persists to SQLite, so a restarted node resumes at its tip instead of re-syncing.
+`SIGINT`/`SIGTERM` close the database cleanly.
+
+### Talking to it
+
+```bash
+curl -s localhost:19332 -d '{"method":"getblockchaininfo"}' | jq
+curl -s localhost:19332 -d '{"method":"getpeerinfo"}' | jq
+curl -s localhost:19332 -d '{"method":"generate","params":{"count":5,"address":"dxc1q…"}}' | jq
+curl -s localhost:19332 -d '{"method":"auditsupply"}' | jq
+```
+
+<details>
+<summary><b>Full RPC surface (21 methods)</b></summary>
+
+| Method | Purpose |
+|---|---|
+| `getinfo` | node, chain, peer and mempool summary |
+| `getblockchaininfo` | height, tip, issuance, supply audit |
+| `getbestblockhash` / `getblockhash` | tip hash / hash at a height |
+| `getblock` / `getblockheader` | a block or header, active or on a side branch |
+| `gettransaction` | from the chain or the mempool |
+| `getbalance` / `listunspent` | address balance and its outputs |
+| `getcontract` | contract code, storage and guarded value |
+| `sendrawtransaction` | validate, pool and relay |
+| `submitblock` | submit an externally mined block |
+| `generate` | mine locally (regtest/testnet) |
+| `getrawmempool` / `getmempoolinfo` | pooled transactions and fee range |
+| `getpeerinfo` / `addnode` / `listbanned` | peer management |
+| `sync` | request headers from the best-known peer |
+| `auditsupply` | verify the UTXO total against cumulative issuance |
+| `help` | this list |
+
+Binds to loopback with **no authentication** — by design. A password field would imply this is safe
+to expose, and it is not. Reachable RPC belongs behind a proxy that terminates TLS and authenticates.
+
+</details>
+
+### How the node stays correct
+
+| Concern | Approach |
+|---|---|
+| **Durability** | SQLite via `node:sqlite`, WAL mode. Every block applies inside a transaction — a half-written block is the one failure that silently forks a node. |
+| **Reorgs** | Every block writes an **undo record**; disconnecting restores the exact prior state in O(inputs), not by replaying from genesis. After undo, the restored state root is checked against the parent's commitment — if it disagrees, the node stops rather than continue on an unknown chain. |
+| **Fork choice** | Most accumulated work, not longest. Losing branches are retained: a branch that loses today can win tomorrow. |
+| **Failed reorgs** | If any block on a new branch fails to connect, the whole move is rolled back and the original tip restored. |
+| **Depth limit** | Reorgs deeper than the undo window are **refused**, not attempted with missing data. |
+| **Mempool** | Transactions from disconnected blocks return to the pool; those in connected blocks leave it; everything is revalidated against the new tip. Skipping this is how a node relays transactions a reorg already invalidated. |
+| **Orphans** | Blocks arriving before their parent are held (bounded to 100) and connected when the gap fills. |
+| **Misbehaviour** | Ban scoring: 1 for version skew, 10 for protocol violations, 100 for an invalid block or a framing error. A peer that is merely *behind* is never banned — that is how networks partition themselves. |
 
 ---
 
@@ -263,8 +350,16 @@ test/volt.test.ts         28  funding · payments · cooperative + force close �
                               fees · END-TO-END routed payment
 test/onion.test.ts         8  layer peeling · constant packet size · tampering ·
                               payment-hash binding · ephemeral unlinkability
+test/reorg.test.ts        11  persistence across restart · orphans · REORG with state
+                              following · exact UTXO restoration · failed-branch
+                              rollback · depth limit · block locator
+test/network.test.ts      15  wire framing · handshake · addr gossip · block relay ·
+                              late-joiner sync · out-of-order blocks · tx relay ·
+                              FORK CONVERGENCE over real TCP · banning · JSON-RPC
+test/watchtower.test.ts   10  blob encryption · hint-only privacy · MAC failure ·
+                              BREACH CAUGHT while offline · honest close ignored
                           ───
-                          110
+                          146
 ```
 
 **The test suite is the specification.** If a claim on the website or in this README is not backed by
@@ -306,19 +401,35 @@ chain/
 │  ├─ tx.ts           transaction model · sighash · script types · validation
 │  ├─ block.ts        header · PoW · nBits · retarget · issuance schedule
 │  ├─ state.ts        UTXO set · contract accounts · state root
-│  ├─ chain.ts        block assembly · validation · state transition · fork choice
+│  ├─ chain.ts        state transition (applyTx) · in-memory chain · fork choice
+│  ├─ params.ts       mainnet / testnet / regtest — the only place they differ
 │  ├─ scenario.ts     the 12-step reference scenario
 │  ├─ cli.ts          command line interface
+│  ├─ deckxd.ts       the node daemon
 │  ├─ contracts/      the standard covenant library + authoring toolkit
+│  ├─ store/
+│  │  └─ sqlite.ts    blocks · UTXOs · contracts · undo records · peer book
+│  ├─ node/
+│  │  ├─ chainstate.ts  persistence · block index · REORG with undo
+│  │  ├─ mempool.ts     fee-rate pool · reorg-aware · dependency-ordered templates
+│  │  ├─ node.ts        sync · relay · orphans · mining
+│  │  └─ rpc.ts         JSON-RPC over HTTP (21 methods)
+│  ├─ net/
+│  │  ├─ wire.ts        framing · checksums · message types
+│  │  ├─ peer.ts        one connection · handshake · ban scoring
+│  │  └─ manager.ts     listener · dialler · address book · relay
 │  └─ volt/
-│     ├─ secrets.ts   per-commitment hash chain · BOLT-03 revocation derivation
-│     ├─ channel.ts   commitments · HTLCs · penalties · closes
-│     ├─ onion.ts     Sphinx — constant-size packet · blinding chain · filler
-│     ├─ router.ts    reverse Dijkstra with amount-dependent fees
-│     ├─ invoice.ts   bech32m `lnvolt1…` signed payment requests
-│     └─ network.ts   nodes · channel lifecycle · end-to-end routed payments
-├─ test/              110 tests across 7 files
-└─ scripts/           export-web-data.ts → web/data/chain.json
+│     ├─ secrets.ts     per-commitment hash chain · BOLT-03 revocation derivation
+│     ├─ channel.ts     commitments · HTLCs · penalties · closes
+│     ├─ onion.ts       Sphinx — constant-size packet · blinding chain · filler
+│     ├─ router.ts      reverse Dijkstra with amount-dependent fees
+│     ├─ invoice.ts     bech32m `lnvolt1…` signed payment requests
+│     ├─ network.ts     nodes · channel lifecycle · end-to-end routed payments
+│     └─ watchtower.ts  encrypted breach blobs the tower cannot read
+├─ test/              146 tests across 10 files
+└─ scripts/
+   ├─ testnet.ts      launch a local multi-node network
+   └─ export-web-data.ts → web/data/chain.json
 web/                  the static site — plain HTML/CSS/JS, no build step
 docs/
 ├─ WHITEPAPER.md      + DeckxCoin-Whitepaper.pdf (13 pages)
@@ -330,16 +441,18 @@ docs/
 
 ## ⚠️ Honest limitations
 
-| Area | Status | Missing |
+| Area | Status | Notes |
 |---|:-:|---|
-| P2P networking | ❌ absent | No gossip, no peer discovery, no mempool relay. This is a library, not a daemon. |
-| Reorg handling | ⚠️ partial | Chainwork and fork choice defined; no orphan pool, no state rollback. |
-| Persistence | ❌ absent | In-memory state with a snapshot path; no on-disk database. |
+| P2P networking | ✅ done | Handshake, addr gossip, inv/getdata relay, headers sync, orphan pool, ban scoring. No NAT traversal, no DNS seeds, no encryption on the wire (BIP-324 equivalent). |
+| Persistence | ✅ done | SQLite via `node:sqlite`, WAL, transactional block application. |
+| Reorg handling | ✅ done | Undo records, most-work fork choice, rollback on failure, depth limit. No pruning of old block bodies. |
+| Volt watchtowers | ✅ done | Encrypted blobs keyed by a txid hint — the tower cannot read what it stores. No fee bumping, no reward mechanism, no persistence across restart. |
+| Wire encryption | ❌ absent | Frames are plaintext JSON. Anyone on the path sees the traffic. |
+| Peer discovery | ⚠️ partial | Gossip works; there are no DNS seeds, so a fresh node needs one `--connect`. |
 | Signature scheme | ⚠️ ECDSA | Schnorr / BIP-340 would give batch verification and cheaper multisig. |
 | Mining | ⚠️ reference | Single-threaded, no stratum. Proves the header is honest; does not compete. |
 | Gas refunds | ⚠️ simplified | Fee must cover `gasUsed × gasPrice`; unused reservation is a miner tip. |
 | Composability | ❌ by design | No `CALL` opcode. This forecloses composable finance entirely — deliberately. |
-| Volt watchtowers | ❌ absent | The penalty transaction works, but someone must be online to broadcast it. |
 | Multi-part payments | ❌ absent | A payment exceeding any channel's liquidity fails rather than splitting. |
 | Wallet / HD keys | ❌ absent | Keys derive from seed phrases directly. No BIP-32. |
 | Quantum resistance | ❌ absent | secp256k1, like everyone else. |

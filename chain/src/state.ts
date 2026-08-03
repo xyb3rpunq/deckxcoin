@@ -121,6 +121,17 @@ export class WorldState {
     this.#contracts.set(address, { ...c, storage });
   }
 
+  /**
+   * Remove a contract entirely.
+   *
+   * There is no `SELFDESTRUCT`, so nothing on the chain can call this. It
+   * exists for one purpose: undoing a block that deployed a contract, during
+   * a reorganisation.
+   */
+  dropContract(address: string): boolean {
+    return this.#contracts.delete(address);
+  }
+
   /* -------------------------------------------------------------- nonces */
 
   nonceOf(address: string): number {
@@ -131,6 +142,15 @@ export class WorldState {
     const next = this.nonceOf(address) + 1;
     this.#nonces.set(address, next);
     return next;
+  }
+
+  /**
+   * Force a nonce to a specific value. Like `dropContract`, this is reorg
+   * machinery — consensus only ever increments.
+   */
+  setNonce(address: string, nonce: number): void {
+    if (nonce <= 0) this.#nonces.delete(address);
+    else this.#nonces.set(address, nonce);
   }
 
   /* ----------------------------------------------------------- state root */

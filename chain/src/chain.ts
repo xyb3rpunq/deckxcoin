@@ -177,14 +177,220 @@ export class Blockchain {
   /* ------------------------------------------------- state transition */
 
   /**
-   * Apply one transaction to `state`. Mutates `state` on success only —
-   * callers pass a clone so a rejected transaction leaves nothing behind.
+   * Apply one transaction to `state`. Delegates to the free function of the
+   * same name so the persistent node can run the identical consensus code
+   * without instantiating an in-memory `Blockchain`. There is exactly one
+   * state-transition implementation in this codebase, and this is it.
    */
   applyTransaction(
     tx: Transaction,
     state: WorldState,
-    ctx: { height: number; time: number; availableFees?: bigint },
+    ctx: TxContext,
   ): ApplyResult {
+    return applyTx(tx, state, ctx);
+  }
+
+  /* ------------------------------------------------------- block intake */
+
+  /**
+   * Validate and append a block. All-or-nothing: state is only promoted if
+   * every transaction applies cleanly and the resulting state root matches
+   * the header's commitment.
+   */
+  addBlock(block: Block, now: number = Math.floor(Date.now() / 1000)): AddBlockResult {
+    const headerCheck = checkHeader(block, now);
+    if (!headerCheck.ok) return { ok: false, error: headerCheck.error };
+
+    const { header } = block;
+    if (header.height !== this.height + 1) {
+      return { ok: false, error: `height must be ${this.height + 1}, got ${header.height}` };
+    }
+    if (header.prevHash !== this.tipHash) {
+      return { ok: false, error: `prevHash does not extend the tip (${this.tipHash})` };
+    }
+    if (header.bits !== this.nextBitsFor(header.height)) {
+      return { ok: false, error: `wrong difficulty: expected ${this.nextBitsFor(header.height).toString(16)}` };
+    }
+    if (header.time <= this.medianTimePast()) {
+      return { ok: false, error: 'block time must exceed median time past of the last 11 blocks' };
+    }
+
+    const draft = this.state.clone();
+
+    // Non-coinbase first: the coinbase's allowance depends on the fees they pay.
+    let totalFees = 0n;
+    let totalGas = 0;
+    const blockLogs: VmLog[] = [];
+    for (const tx of block.transactions.slice(1)) {
+      const res = applyTx(tx, draft, { height: header.height, time: header.time });
+      if (!res.ok) return { ok: false, error: `tx ${txid(tx)}: ${res.error}` };
+      totalFees += res.fee;
+      totalGas += res.gasUsed;
+      blockLogs.push(...res.logs);
+      if (totalGas > BLOCK_GAS_LIMIT) {
+        return { ok: false, error: `block gas ${totalGas} exceeds limit ${BLOCK_GAS_LIMIT}` };
+      }
+    }
+
+    const cbResult = applyTx(block.transactions[0], draft, {
+      height: header.height,
+      time: header.time,
+      availableFees: totalFees,
+    });
+    if (!cbResult.ok) return { ok: false, error: `coinbase: ${cbResult.error}` };
+
+    const computedStateRoot = draft.stateRoot();
+    if (computedStateRoot !== header.stateRoot) {
+      return {
+        ok: false,
+        error: `state root mismatch: header ${header.stateRoot} vs computed ${computedStateRoot}`,
+      };
+    }
+
+    this.state = draft;
+    this.blocks.push(block);
+    this.#work += blockWork(header.bits);
+    if (blockLogs.length > 0) this.logsByHeight.set(header.height, blockLogs);
+
+    return {
+      ok: true,
+      hash: blockHash(header),
+      height: header.height,
+      totalFees,
+      gasUsed: totalGas,
+    };
+  }
+
+  /* ------------------------------------------------------ block assembly */
+
+  /**
+   * Assemble, mine and append a block containing `txs`.
+   *
+   * Transactions that fail to apply are reported rather than silently dropped
+   * — a miner that silently drops transactions is indistinguishable from one
+   * that is censoring.
+   */
+  mineBlock(
+    txs: readonly Transaction[],
+    minerAddress: string,
+    opts: { time?: number; memo?: string } = {},
+  ): { block: Block; result: AddBlockResult; rejected: Array<{ txid: Hex; error: string }>; attempts: number } {
+    const height = this.height + 1;
+    const time = opts.time ?? Math.max(Math.floor(Date.now() / 1000), this.medianTimePast() + 1);
+
+    // Dry-run against a draft so we mine only over transactions that will apply.
+    const draft = this.state.clone();
+    const accepted: Transaction[] = [];
+    const rejected: Array<{ txid: Hex; error: string }> = [];
+    let fees = 0n;
+
+    for (const tx of txs) {
+      const res = applyTx(tx, draft, { height, time });
+      if (res.ok) {
+        accepted.push(tx);
+        fees += res.fee;
+      } else {
+        rejected.push({ txid: txid(tx), error: res.error ?? 'unknown' });
+      }
+    }
+
+    const cb = coinbaseTx(
+      minerAddress,
+      blockSubsidy(height) + fees,
+      height,
+      opts.memo ?? `deckx/${height}`,
+    );
+    applyTx(cb, draft, { height, time, availableFees: fees });
+
+    const template: BlockHeader = {
+      version: 1,
+      prevHash: this.tipHash,
+      merkleRoot: computeMerkleRoot([cb, ...accepted]),
+      stateRoot: draft.stateRoot(),
+      time,
+      bits: this.nextBitsFor(height),
+      height,
+      nonce: 0,
+      extraNonce: 0,
+    };
+
+    const mined = mine(template);
+    const block: Block = { header: mined.header, transactions: [cb, ...accepted] };
+    const result = this.addBlock(block, time + 1);
+    return { block, result, rejected, attempts: mined.attempts };
+  }
+
+  /* ------------------------------------------------------------- helpers */
+
+  /** Difficulty for the block at `height`, per the 2016-block retarget schedule. */
+  nextBitsFor(height: number): number {
+    const currentBits = this.tip.header.bits;
+    if (height === 0 || height % RETARGET_INTERVAL !== 0) return currentBits;
+    const first = this.blocks[height - RETARGET_INTERVAL];
+    const last = this.tip;
+    return nextBits(currentBits, last.header.time - first.header.time);
+  }
+
+  /**
+   * Median of the last 11 block timestamps. Blocks must be strictly newer than
+   * this, which is what stops a miner rolling timestamps backwards to make
+   * difficulty collapse.
+   */
+  medianTimePast(): number {
+    const window = this.blocks.slice(-11).map((b) => b.header.time).sort((a, b) => a - b);
+    return window[Math.floor(window.length / 2)];
+  }
+
+  /**
+   * Supply audit: the UTXO set must total exactly the sum of subsidies paid.
+   *
+   * The single most valuable invariant in the codebase. If it ever drifts,
+   * coins were created or destroyed somewhere they should not have been, and
+   * every other guarantee is void.
+   */
+  auditSupply(): SupplyAudit {
+    return auditSupplyOf(this.state, this.height);
+  }
+}
+
+/** Context a transaction is validated against. */
+export interface TxContext {
+  readonly height: number;
+  readonly time: number;
+  /** Fees available to a coinbase. Ignored for other kinds. */
+  readonly availableFees?: bigint;
+}
+
+export interface SupplyAudit {
+  readonly utxoTotal: bigint;
+  readonly expectedSubsidy: bigint;
+  readonly balanced: boolean;
+  readonly percentOfCap: string;
+  readonly underCap: boolean;
+}
+
+/** Shared by the in-memory chain and the persistent node. */
+export function auditSupplyOf(state: WorldState, height: number): SupplyAudit {
+  const expected = cumulativeIssuance(height);
+  const utxoTotal = state.totalSupply();
+  return {
+    utxoTotal,
+    expectedSubsidy: expected,
+    balanced: utxoTotal === expected,
+    percentOfCap: ((Number(utxoTotal) / Number(MAX_SUPPLY)) * 100).toFixed(6),
+    underCap: utxoTotal <= MAX_SUPPLY,
+  };
+}
+
+/**
+ * Apply one transaction to `state`.
+ *
+ * The single state-transition function in the codebase. Mutates `state` only
+ * on success, so callers pass a clone and a rejected transaction leaves
+ * nothing behind. Both the in-memory `Blockchain` and the persistent node run
+ * this exact code — a second implementation would be a second consensus.
+ */
+export function applyTx(tx: Transaction, state: WorldState, ctx: TxContext): ApplyResult {
     /* --- coinbase ---------------------------------------------------- */
     if (tx.kind === TX_KIND.COINBASE) {
       const check = checkTx(tx, []);
@@ -394,184 +600,6 @@ export class Blockchain {
     });
 
     return { ok: true, fee, gasUsed, logs: vm?.logs ?? [], contractAddress: deployed, vm };
-  }
-
-  /* ------------------------------------------------------- block intake */
-
-  /**
-   * Validate and append a block. All-or-nothing: state is only promoted if
-   * every transaction applies cleanly and the resulting state root matches
-   * the header's commitment.
-   */
-  addBlock(block: Block, now: number = Math.floor(Date.now() / 1000)): AddBlockResult {
-    const headerCheck = checkHeader(block, now);
-    if (!headerCheck.ok) return { ok: false, error: headerCheck.error };
-
-    const { header } = block;
-    if (header.height !== this.height + 1) {
-      return { ok: false, error: `height must be ${this.height + 1}, got ${header.height}` };
-    }
-    if (header.prevHash !== this.tipHash) {
-      return { ok: false, error: `prevHash does not extend the tip (${this.tipHash})` };
-    }
-    if (header.bits !== this.nextBitsFor(header.height)) {
-      return { ok: false, error: `wrong difficulty: expected ${this.nextBitsFor(header.height).toString(16)}` };
-    }
-    if (header.time <= this.medianTimePast()) {
-      return { ok: false, error: 'block time must exceed median time past of the last 11 blocks' };
-    }
-
-    const draft = this.state.clone();
-
-    // Non-coinbase first: the coinbase's allowance depends on the fees they pay.
-    let totalFees = 0n;
-    let totalGas = 0;
-    const blockLogs: VmLog[] = [];
-    for (const tx of block.transactions.slice(1)) {
-      const res = this.applyTransaction(tx, draft, { height: header.height, time: header.time });
-      if (!res.ok) return { ok: false, error: `tx ${txid(tx)}: ${res.error}` };
-      totalFees += res.fee;
-      totalGas += res.gasUsed;
-      blockLogs.push(...res.logs);
-      if (totalGas > BLOCK_GAS_LIMIT) {
-        return { ok: false, error: `block gas ${totalGas} exceeds limit ${BLOCK_GAS_LIMIT}` };
-      }
-    }
-
-    const cbResult = this.applyTransaction(block.transactions[0], draft, {
-      height: header.height,
-      time: header.time,
-      availableFees: totalFees,
-    });
-    if (!cbResult.ok) return { ok: false, error: `coinbase: ${cbResult.error}` };
-
-    const computedStateRoot = draft.stateRoot();
-    if (computedStateRoot !== header.stateRoot) {
-      return {
-        ok: false,
-        error: `state root mismatch: header ${header.stateRoot} vs computed ${computedStateRoot}`,
-      };
-    }
-
-    this.state = draft;
-    this.blocks.push(block);
-    this.#work += blockWork(header.bits);
-    if (blockLogs.length > 0) this.logsByHeight.set(header.height, blockLogs);
-
-    return {
-      ok: true,
-      hash: blockHash(header),
-      height: header.height,
-      totalFees,
-      gasUsed: totalGas,
-    };
-  }
-
-  /* ------------------------------------------------------ block assembly */
-
-  /**
-   * Assemble, mine and append a block containing `txs`.
-   *
-   * Returns the mined block plus the work it took. Transactions that fail to
-   * apply are reported rather than silently dropped — a miner that silently
-   * drops transactions is indistinguishable from one that is censoring.
-   */
-  mineBlock(
-    txs: readonly Transaction[],
-    minerAddress: string,
-    opts: { time?: number; memo?: string } = {},
-  ): { block: Block; result: AddBlockResult; rejected: Array<{ txid: Hex; error: string }>; attempts: number } {
-    const height = this.height + 1;
-    const time = opts.time ?? Math.max(Math.floor(Date.now() / 1000), this.medianTimePast() + 1);
-
-    // Dry-run against a draft so we mine only over transactions that will apply.
-    const draft = this.state.clone();
-    const accepted: Transaction[] = [];
-    const rejected: Array<{ txid: Hex; error: string }> = [];
-    let fees = 0n;
-
-    for (const tx of txs) {
-      const res = this.applyTransaction(tx, draft, { height, time });
-      if (res.ok) {
-        accepted.push(tx);
-        fees += res.fee;
-      } else {
-        rejected.push({ txid: txid(tx), error: res.error ?? 'unknown' });
-      }
-    }
-
-    const cb = coinbaseTx(
-      minerAddress,
-      blockSubsidy(height) + fees,
-      height,
-      opts.memo ?? `deckx/${height}`,
-    );
-    this.applyTransaction(cb, draft, { height, time, availableFees: fees });
-
-    const template: BlockHeader = {
-      version: 1,
-      prevHash: this.tipHash,
-      merkleRoot: computeMerkleRoot([cb, ...accepted]),
-      stateRoot: draft.stateRoot(),
-      time,
-      bits: this.nextBitsFor(height),
-      height,
-      nonce: 0,
-      extraNonce: 0,
-    };
-
-    const mined = mine(template);
-    const block: Block = { header: mined.header, transactions: [cb, ...accepted] };
-    const result = this.addBlock(block, time + 1);
-    return { block, result, rejected, attempts: mined.attempts };
-  }
-
-  /* ------------------------------------------------------------- helpers */
-
-  /** Difficulty for the block at `height`, per the 2016-block retarget schedule. */
-  nextBitsFor(height: number): number {
-    const currentBits = this.tip.header.bits;
-    if (height === 0 || height % RETARGET_INTERVAL !== 0) return currentBits;
-    const first = this.blocks[height - RETARGET_INTERVAL];
-    const last = this.tip;
-    return nextBits(currentBits, last.header.time - first.header.time);
-  }
-
-  /**
-   * Median of the last 11 block timestamps. Blocks must be strictly newer than
-   * this, which is what stops a miner rolling timestamps backwards to make
-   * difficulty collapse.
-   */
-  medianTimePast(): number {
-    const window = this.blocks.slice(-11).map((b) => b.header.time).sort((a, b) => a - b);
-    return window[Math.floor(window.length / 2)];
-  }
-
-  /**
-   * Supply audit: the UTXO set must total exactly the sum of subsidies paid.
-   *
-   * This is the single most valuable invariant in the whole codebase. If it
-   * ever drifts, coins were created or destroyed somewhere they should not
-   * have been, and every other guarantee is void. It runs at the end of every
-   * scenario and in eleven tests.
-   */
-  auditSupply(): {
-    utxoTotal: bigint;
-    expectedSubsidy: bigint;
-    balanced: boolean;
-    percentOfCap: string;
-    underCap: boolean;
-  } {
-    const expected = cumulativeIssuance(this.height);
-    const utxoTotal = this.state.totalSupply();
-    return {
-      utxoTotal,
-      expectedSubsidy: expected,
-      balanced: utxoTotal === expected,
-      percentOfCap: ((Number(utxoTotal) / Number(MAX_SUPPLY)) * 100).toFixed(6),
-      underCap: utxoTotal <= MAX_SUPPLY,
-    };
-  }
 }
 
 function failure(error: string, fee = 0n): ApplyResult {

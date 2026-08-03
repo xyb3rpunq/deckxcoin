@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckxCoin — REKT protocol · Bitcoin UTXO + Ethereum contracts + Volt channels</title>
-<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 110 passing tests.">
+<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 146 passing tests.">
 <meta name="theme-color" content="#05060a">
 <meta property="og:title" content="DeckxCoin — REKT protocol">
 <meta property="og:description" content="Bitcoin's UTXO layer, Ethereum's contract layer, Lightning's channel layer. One chain. Mined genesis, not hardcoded.">
@@ -30,6 +30,7 @@
     <a href="#supply">Supply</a>
     <a href="#contracts">Contracts</a>
     <a href="#volt">Volt</a>
+    <a href="#network">Node</a>
     <a href="#explorer">Explorer</a>
     <a class="ghost" href="DeckxCoin-Whitepaper.pdf">Whitepaper ↓</a>
     <a class="ghost" href="https://github.com/xyb3rpunq/deckxcoin" rel="noopener">GitHub ↗</a>
@@ -47,14 +48,14 @@
     <p class="lede">
       Every chain you have been rugged by started with a whitepaper you did not read.
       This one ships <strong>the whitepaper, the chain, and the tests together</strong> — a genesis
-      block that was <strong>mined, not hard-coded</strong>, 110 tests that fail loudly when the
+      block that was <strong>mined, not hard-coded</strong>, 146 tests that fail loudly when the
       cryptography is wrong, and source that carries its reasoning inline.
     </p>
 
     <div class="hero-stats" id="hero-stats">
       <div class="stat"><span class="stat-label">genesis hash</span><span class="stat-value mono" data-bind="genesis.hash.short">—</span></div>
       <div class="stat"><span class="stat-label">proof of work</span><span class="stat-value mono" data-bind="genesis.attempts">—</span></div>
-      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">110 / 110</span></div>
+      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">146 / 146</span></div>
       <div class="stat"><span class="stat-label">supply audit</span><span class="stat-value mono ok" data-bind="supply.status">—</span></div>
     </div>
 
@@ -604,10 +605,136 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════ EXPLORER ══ -->
-<section id="explorer" class="section">
+<!-- ═══════════════════════════════════════════════════ NETWORK ══ -->
+<section id="network" class="section">
   <div class="section-head">
     <span class="section-index">09</span>
+    <h2>The node</h2>
+    <p class="section-sub">
+      P2P over real TCP, SQLite persistence, and reorganisation with undo records. This is the part
+      that turns a library into a network.
+    </p>
+  </div>
+
+  <div class="cards four compact">
+    <div class="mini"><span class="mini-k">wire protocol</span><span class="mini-v">framed</span></div>
+    <div class="mini"><span class="mini-k">persistence</span><span class="mini-v">SQLite</span></div>
+    <div class="mini"><span class="mini-k">rpc methods</span><span class="mini-v">21</span></div>
+    <div class="mini"><span class="mini-k">new deps</span><span class="mini-v">0</span></div>
+  </div>
+
+  <div class="prose">
+    <p>
+      The chain shipped as a library first, and a library is not a network. Two miners find a block
+      at the same height within hours of any real deployment, and an append-only chain has no answer
+      for that. Four things had to exist before <em>testnet</em> meant anything:
+      <strong>durability, a block index, undo records, and a wire protocol.</strong>
+    </p>
+    <p>
+      Persistence uses <code>node:sqlite</code>, which ships with Node. The full node therefore adds
+      <strong>zero dependencies</strong> to the three the chain already had.
+    </p>
+  </div>
+
+  <div class="table-wrap">
+    <table class="spec">
+      <thead><tr><th>Concern</th><th>Approach</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Durability</td>
+          <td>WAL-mode SQLite. Every block applies inside a transaction — a half-written block is the single failure that silently forks a node off the network.</td>
+        </tr>
+        <tr>
+          <td>Reorgs</td>
+          <td>Each block writes an <strong>undo record</strong>, so disconnecting restores the exact prior state in O(inputs) rather than replaying from genesis. After undo, the restored state root is checked against the parent's committed root — if they disagree the node halts instead of continuing on an unknown chain.</td>
+        </tr>
+        <tr>
+          <td>Fork choice</td>
+          <td>Most accumulated work, not longest. Losing branches are <em>retained</em>: a branch that loses today can win tomorrow, and a node that discarded it would have to re-download.</td>
+        </tr>
+        <tr>
+          <td>Failed reorgs</td>
+          <td>If any block on a new branch fails to connect, the entire move is rolled back and the original tip restored. A failed reorg must never leave a node half-applied.</td>
+        </tr>
+        <tr>
+          <td>Depth limit</td>
+          <td>A reorg deeper than the undo window is <strong>refused</strong>, not attempted with missing data.</td>
+        </tr>
+        <tr>
+          <td>Mempool</td>
+          <td>Transactions from disconnected blocks return to the pool; those in connected blocks leave it; the remainder is revalidated against the new tip. Skipping this is how a node ends up relaying transactions a reorg already invalidated.</td>
+        </tr>
+        <tr>
+          <td>Orphans</td>
+          <td>Blocks arriving before their parent are held — bounded to 100, because an unbounded orphan pool is a free memory-exhaustion attack — and connected once the gap fills.</td>
+        </tr>
+        <tr>
+          <td>Ban scoring</td>
+          <td>1 point for version skew, 10 for a protocol violation, 100 for an invalid block or a framing error. A peer that is merely <em>behind</em> is never banned; banning honest nodes for being out of date is how a network partitions itself.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prose">
+    <h3>Launch a three-node network</h3>
+  </div>
+
+  <div class="code-block">
+    <div class="code-head"><span>shell</span><button class="copy-btn" data-copy="#testnet-cmds">copy</button></div>
+<pre id="testnet-cmds"><code>cd chain
+node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-head"><span>output — three nodes converging over TCP</span></div>
+<pre><code><span class="c">DeckxCoin local testnet — 3 nodes on regtest</span>
+
+  node1  p2p 127.0.0.1:29001  rpc http://127.0.0.1:29101
+  node2  p2p 127.0.0.1:29002  rpc http://127.0.0.1:29102
+  node3  p2p 127.0.0.1:29003  rpc http://127.0.0.1:29103
+
+11:58:32 node2 peer 127.0.0.1:29001
+11:58:34 node1 peer 127.0.0.1:29003        <span class="c">← found via addr gossip</span>
+11:58:35 node1 tip 1 2938c5cea89d5325…
+11:58:36 node2 tip 1 2938c5cea89d5325…
+11:58:36 node3 tip 1 2938c5cea89d5325…
+11:58:47 network  heights=[4, 4, 4] converged supply=998.85844745 DECKX</code></pre>
+  </div>
+
+  <div class="callout small">
+    <h4>Convergence is measured on the state root, not the tip hash</h4>
+    <p>
+      Two nodes can agree on which block is the tip while disagreeing about the UTXO set underneath
+      it — and that node forks off the network three blocks later, for reasons that look unrelated.
+      Every convergence assertion in <code>test/network.test.ts</code> compares
+      <code>stateRoot()</code>, and the testnet's status line does the same.
+    </p>
+  </div>
+
+  <div class="prose">
+    <h3>Volt watchtower</h3>
+    <p>
+      The penalty transaction closes the theft loophole in payment channels — but only if somebody
+      broadcasts it. Until the watchtower existed, a channel was safe only while its owner was
+      online, and "mostly online" is not a security property.
+    </p>
+    <p>
+      A naive tower is handed the channel list and the revocation secrets, and thereby learns the
+      user's entire payment graph — a worse leak than the risk it removes. Instead each update
+      registers an <strong>encrypted blob keyed by a hint</strong>: the first 16 bytes of the
+      commitment txid are the lookup key, the last 16 bytes are the decryption key. The tower stores
+      the first half and learns nothing — it cannot read the blob, or even tell which channel it
+      belongs to. When the commitment appears on-chain the tower sees the full txid, derives the key
+      from the half it now knows, decrypts, and broadcasts.
+    </p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ EXPLORER ══ -->
+<section id="explorer" class="section alt">
+  <div class="section-head">
+    <span class="section-index">10</span>
     <h2>Live chain explorer</h2>
     <p class="section-sub">
       Every value below was produced by <code>chain/scripts/export-web-data.ts</code> running the real
@@ -639,9 +766,9 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 </section>
 
 <!-- ═══════════════════════════════════════════════════ PARAMS ══ -->
-<section id="params" class="section alt">
+<section id="params" class="section">
   <div class="section-head">
-    <span class="section-index">10</span>
+    <span class="section-index">11</span>
     <h2>Consensus parameters</h2>
     <p class="section-sub">Everything a second implementation would need to agree with this one.</p>
   </div>
@@ -673,7 +800,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 <!-- ═══════════════════════════════════════════════════ RUN ══ -->
 <section id="run" class="section">
   <div class="section-head">
-    <span class="section-index">11</span>
+    <span class="section-index">12</span>
     <h2>Run it yourself</h2>
     <p class="section-sub">Node 22.18+ (native TypeScript type stripping). No build step, no bundler, three dependencies.</p>
   </div>
@@ -684,7 +811,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 cd deckxcoin/chain
 npm install
 
-npm test              <span class="c"># 110 tests — crypto, consensus, VM, covenants, Volt</span>
+npm test              <span class="c"># 146 tests — crypto, consensus, VM, covenants, Volt, P2P</span>
 node src/cli.ts genesis    <span class="c"># mine and verify the genesis block</span>
 node src/cli.ts verify     <span class="c"># prove genesis is reproducible</span>
 node src/cli.ts volt       <span class="c"># routed off-chain payment across two channels</span>
@@ -710,7 +837,7 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
 <!-- ═══════════════════════════════════════════════════ AUDIT ══ -->
 <section id="audit" class="section alt">
   <div class="section-head">
-    <span class="section-index">12</span>
+    <span class="section-index">13</span>
     <h2>Honest limitations</h2>
     <p class="section-sub">What this is not. Read this before you put anything of value near it.</p>
   </div>
