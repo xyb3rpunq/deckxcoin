@@ -1,0 +1,31 @@
+# Line endings.
+#
+# Git's default on Windows is to check files out with CRLF. For most of this
+# repository that is harmless — Node does not care, and neither does a browser.
+#
+# For shell scripts it is not harmless at all. A `#!/usr/bin/env bash` script
+# with CRLF endings fails on every Linux machine with:
+#
+#     deploy.sh: line 32: $'\r': command not found
+#     set: pipefail: invalid option name
+#
+# — an error that points at the wrong thing entirely and sends people hunting
+# through bash options. `deploy.sh` is written to be copied to a server, so it
+# has to be LF wherever it lives, including in a Windows working tree.
+#
+# The same applies to the systemd unit it writes, and to anything else read by
+# a Linux tool rather than by Node.
+
+* text=auto
+
+*.sh        text eol=lf
+*.service   text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+Dockerfile  text eol=lf
+
+# Binary: never touch these.
+*.pdf       binary
+*.png       binary
+*.jpg       binary
+*.ico       binary

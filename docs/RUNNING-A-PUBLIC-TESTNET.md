@@ -48,6 +48,32 @@ gets to make.
 
 The rest of this document is what that script does, and why.
 
+### Testing it without a server
+
+You do not need a VPS to find out whether it works.
+
+```bash
+./chain/scripts/test-deploy-docker.sh
+```
+
+runs the whole thing in a container booted with systemd as PID 1 — install,
+service active and *not restart-looping*, unprivileged user, 0700 datadir, the
+gateway refusing all seven dangerous methods, an idempotent second run, and an
+uninstall that keeps the keys. Two minutes, locally, and the container is thrown
+away afterwards.
+
+The same checks run on every change to the script in
+[`.github/workflows/deploy-test.yml`](../.github/workflows/deploy-test.yml),
+because a GitHub Actions runner is also a real Ubuntu machine with systemd —
+free for public repositories, and destroyed after each run, which makes it the
+one place it is safe to let a script create system users and start services as
+root.
+
+Its first run found that `deploy.sh` rejected `--faucet-reserve`, and the first
+Docker run found that a Windows checkout gives the script CRLF endings that fail
+on Linux with an error pointing at bash options. Neither was reachable from a
+laptop without one of these.
+
 ---
 
 ## 1. Seed nodes
