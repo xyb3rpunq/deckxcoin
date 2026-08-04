@@ -104,6 +104,14 @@ async function main(): Promise<number> {
     listen: !args.has('no-listen'),
     connect: args.many('connect'),
     userAgent: `deckxd:0.2.0/${params.name}`,
+    // A `.onion` peer cannot be reached any other way, and a node that wants
+    // to stay unlocated must not dial from its own address either.
+    proxy: args.has('proxy')
+      ? (() => {
+          const [host, port] = (args.one('proxy', '127.0.0.1:9050') as string).split(':');
+          return { host: host || '127.0.0.1', port: Number(port) || 9050, kind: 'tor' as const };
+        })()
+      : undefined,
   });
 
   const rpc = new RpcServer({ node, port: rpcPort });
@@ -367,6 +375,9 @@ deckxd — the DeckxCoin node daemon
   --connect <host:port>  dial a peer, repeatable
   --mine <address>       mine to this address
   --mine-interval <s>    seconds between attempts         (default 10)
+  --proxy [host:port]    dial through a SOCKS5 proxy    (default 127.0.0.1:9050)
+                         Required to reach .onion peers. With Tor running, this
+                         is what stops a node announcing where it is.
   --no-listen            outbound connections only
   --quiet                suppress the periodic status line
   --help                 this text

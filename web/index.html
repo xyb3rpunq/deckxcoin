@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckxCoin — REKT protocol · Bitcoin UTXO + Ethereum contracts + Volt channels</title>
-<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 362 passing tests.">
+<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 398 passing tests.">
 <meta name="theme-color" content="#05060a">
 <meta property="og:title" content="DeckxCoin — REKT protocol">
 <meta property="og:description" content="Bitcoin's UTXO layer, Ethereum's contract layer, Lightning's channel layer. One chain. Mined genesis, not hardcoded.">
@@ -54,14 +54,14 @@
     <p data-i18n="header.p2" class="lede">
       Every chain you have been rugged by started with a whitepaper you did not read.
       This one ships <strong>the whitepaper, the chain, and the tests together</strong> — a genesis
-      block that was <strong>mined, not hard-coded</strong>, 362 tests that fail loudly when the
+      block that was <strong>mined, not hard-coded</strong>, 398 tests that fail loudly when the
       cryptography is wrong, and source that carries its reasoning inline.
     </p>
 
     <div class="hero-stats" id="hero-stats">
       <div class="stat"><span class="stat-label">genesis hash</span><span class="stat-value mono" data-bind="genesis.hash.short">—</span></div>
       <div class="stat"><span class="stat-label">proof of work</span><span class="stat-value mono" data-bind="genesis.attempts">—</span></div>
-      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">362 / 362</span></div>
+      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">398 / 398</span></div>
       <div class="stat"><span class="stat-label">supply audit</span><span class="stat-value mono ok" data-bind="supply.status">—</span></div>
     </div>
 
@@ -570,10 +570,10 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
         <tr><td data-i18n="volt.td25">Sphinx onion routing</td><td>BOLT 4</td><td data-i18n="volt.td27">1986-byte constant-size packet, 20 hop slots, ephemeral-key blinding chain, deterministic filler, per-hop HMAC.</td><td data-i18n="volt.td28" class="done">implemented</td></tr>
         <tr><td data-i18n="volt.td29">Invoices</td><td>BOLT 11</td><td data-i18n="volt.td31">bech32m <code>lnvolt1…</code>, signed by the payee, with amount, payment hash, expiry and min-final-CLTV.</td><td data-i18n="volt.td32" class="done">implemented</td></tr>
         <tr><td data-i18n="volt.td33">Pathfinding</td><td>—</td><td data-i18n="volt.td34">Reverse Dijkstra with amount-dependent fees and a time-lock risk factor; returns ranked alternatives because balances are private.</td><td data-i18n="volt.td35" class="done">implemented</td></tr>
-        <tr><td data-i18n="volt.td36">PTLCs (point time-locks)</td><td data-i18n="volt.td37">draft</td><td data-i18n="volt.td38">Every channel already carries the adaptor point, and signatures are now BIP-340 Schnorr — the scheme adaptor signatures require. Settlement still uses hash locks.</td><td data-i18n="volt.td39" class="partial">scaffolded</td></tr>
-        <tr><td data-i18n="volt.td40">Splicing</td><td>BOLT 2</td><td data-i18n="volt.td42">Resizing a channel without closing it.</td><td data-i18n="volt.td43" class="todo">not implemented</td></tr>
+        <tr><td data-i18n="volt.td36">PTLCs (point time-locks)</td><td data-i18n="volt.td37">implemented</td><td data-i18n="volt.td38">Schnorr adaptor signatures: a signature with a hole in it, completable by exactly one secret scalar and revealing that scalar to whoever sees it completed. Each hop gets <code>T + r&#8339;·G</code> for a blinding scalar only the sender knows, so two hops on one route see unrelated points instead of the identical hash an HTLC hands them.</td><td data-i18n="volt.td39" class="partial">implemented</td></tr>
+        <tr><td data-i18n="volt.td40">Splicing</td><td>BOLT 2</td><td data-i18n="volt.td42">Splice in or out and keep the same channel and the same short id, instead of closing and reopening. Refuses while HTLCs are in flight — re-expressing them against both the old and the new funding output is BOLT-2's hardest part, and refusing is the smaller surface.</td><td data-i18n="volt.td43" class="todo">implemented</td></tr>
         <tr><td data-i18n="volt.td44">Watchtowers</td><td>BOLT 13 draft</td><td data-i18n="volt.td46">Blobs encrypted with the second half of the commitment txid and keyed by the first half, so the tower cannot read what it stores or tell which channel it guards. Fee ladders with escalation, persisted to SQLite, signed receipts and retention audits.</td><td data-i18n="volt.td47" class="done">implemented</td></tr>
-        <tr><td data-i18n="volt.td48">Route hints / private channels</td><td>BOLT 11</td><td data-i18n="volt.td50">Payers that cannot find a public path simply fail.</td><td data-i18n="volt.td51" class="todo">not implemented</td></tr>
+        <tr><td data-i18n="volt.td48">Route hints / private channels</td><td>BOLT 11</td><td data-i18n="volt.td50">An invoice can carry the last hops toward a payee whose channels are not announced. The payer splices them into its own graph for that one search and never into the shared view — a hint is one payee's claim about its own channel, not a fact about the network.</td><td data-i18n="volt.td51" class="todo">implemented</td></tr>
       </tbody>
     </table>
   </div>
@@ -898,7 +898,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 cd deckxcoin/chain
 npm install
 
-npm test              <span class="c"># 362 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
+npm test              <span class="c"># 398 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
 node src/cli.ts genesis    <span class="c"># mine and verify the genesis block</span>
 node src/cli.ts verify     <span class="c"># prove genesis is reproducible</span>
 node src/cli.ts volt       <span class="c"># routed off-chain payment across two channels</span>

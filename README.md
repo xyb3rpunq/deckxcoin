@@ -8,7 +8,7 @@
 
 **Bitcoin's UTXO value layer · an Ethereum-style contract layer that holds no balance · a Lightning-style channel network**
 
-[![tests](https://img.shields.io/badge/tests-362%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![tests](https://img.shields.io/badge/tests-398%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
 [![node](https://img.shields.io/badge/full%20node-P2P%20%2B%20reorg%20%2B%20SQLite-38d9ff?style=flat-square&labelColor=0c0f18)](#-running-a-node)
 [![supply](https://img.shields.io/badge/supply-21%2C000%2C000%20DECKX-ff2d55?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![halving](https://img.shields.io/badge/halving-every%20365%20days-ffb020?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
@@ -495,8 +495,15 @@ test/pq.test.ts           17  WOTS+ hash-based signatures · why the checksum
                               exists · reuse measured signature by signature ·
                               A FORGED SIGNATURE THE REAL VERIFIER ACCEPTS ·
                               unspent outputs are already behind a hash
+test/adaptor.test.ts      20  adaptor signatures · THE PARITY GRIND across 60
+                              keys · the secret walks backwards along a route ·
+                              one hop's scalar opens no other hop's point ·
+                              on-chain PTLC outputs and their timeout branch
+test/socks.test.ts        16  SOCKS5 over Tor · THE DNS LEAK · the onion name
+                              reaches the proxy intact · variable-length replies ·
+                              a silent proxy times out
                           ───
-                          362
+                          398
 ```
 
 **The test suite is the specification.** If a claim on the website or in this README is not backed by
@@ -558,6 +565,7 @@ chain/
 │  │  └─ rpc.ts         JSON-RPC over HTTP (21 methods)
 │  ├─ net/
 │  │  ├─ wire.ts        framing · checksums · message types
+│  │  ├─ socks.ts       SOCKS5 · Tor · .onion peers · no DNS leak
 │  │  ├─ peer.ts        one connection · handshake · ban scoring
 │  │  ├─ identity.ts    long-term keys · transcript signing · pinning
 │  │  ├─ compact.ts     BIP-152 compact block relay
@@ -570,11 +578,12 @@ chain/
 │     ├─ secrets.ts     per-commitment hash chain · BOLT-03 revocation derivation
 │     ├─ channel.ts     commitments · HTLCs · penalties · closes
 │     ├─ onion.ts       Sphinx — constant-size packet · blinding chain · filler
+│     ├─ adaptor.ts     Schnorr adaptor signatures — the cryptography under PTLCs
 │     ├─ router.ts      reverse Dijkstra with amount-dependent fees
 │     ├─ invoice.ts     bech32m `lnvolt1…` signed payment requests
 │     ├─ network.ts     nodes · channel lifecycle · end-to-end routed payments
 │     └─ watchtower.ts  encrypted breach blobs the tower cannot read
-├─ test/              362 tests across 20 files
+├─ test/              398 tests across 22 files
 └─ scripts/
    ├─ testnet.ts             launch a local multi-node network
    ├─ deploy.sh              provision a public node on a fresh server

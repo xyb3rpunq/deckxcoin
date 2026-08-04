@@ -23,6 +23,35 @@
 
 import type { Hex } from '../crypto.ts';
 
+/**
+ * A hop toward a payee whose channels are not announced.
+ *
+ * A node that never announces its channels cannot be routed to: the graph
+ * simply does not contain it. That is often deliberate — announcing a channel
+ * publishes who you are connected to and roughly how much you have with them —
+ * and it means every private node would be unpayable.
+ *
+ * A route hint is the payee telling the payer the last few edges itself,
+ * inside the invoice. The payer splices them into its own graph for that one
+ * search. It is a small privacy trade made by the person it affects: the payee
+ * reveals one peer to whoever it hands the invoice to, rather than revealing
+ * every peer to everybody, forever.
+ */
+export interface RouteHint {
+  readonly shortChannelId: bigint;
+  /** The node that can forward to the payee. */
+  readonly from: Hex;
+  readonly to: Hex;
+  readonly baseFee: bigint;
+  readonly feePpm: bigint;
+  readonly cltvDelta: number;
+  /**
+   * What the payee claims can be pushed through. A hint is a claim, not a
+   * proof — the payer finds out by trying.
+   */
+  readonly capacity: bigint;
+}
+
 export interface ChannelEdge {
   /** Compact channel identifier, as it appears in onion hop payloads. */
   readonly shortChannelId: bigint;
@@ -157,6 +186,14 @@ export class ChannelGraph {
     riskFactor?: bigint;
     /** Channels to avoid — the sender's record of what failed on the last attempt. */
     exclude?: ReadonlySet<bigint>;
+    /**
+     * Edges the payee supplied, valid for this search only.
+     *
+     * Not added to the graph: a hint is one payee's claim about its own
+     * unannounced channel, and folding it into the shared view would let any
+     * invoice write into every future route calculation.
+     */
+    hints?: readonly RouteHint[];
   }): Route | undefined {
     const {
       source,
@@ -167,10 +204,31 @@ export class ChannelGraph {
       maxHops = 20,
       riskFactor = DEFAULT_RISK_FACTOR,
       exclude = new Set<bigint>(),
+      hints = [],
     } = opts;
 
     if (source === destination) return undefined;
     if (amount <= 0n) return undefined;
+
+    // Indexed by destination, because the search runs backwards from the payee.
+    const hintEdges = new Map<Hex, ChannelEdge[]>();
+    for (const hint of hints) {
+      const edge: ChannelEdge = {
+        shortChannelId: hint.shortChannelId,
+        from: hint.from,
+        to: hint.to,
+        capacity: hint.capacity,
+        baseFee: hint.baseFee,
+        feePpm: hint.feePpm,
+        cltvDelta: hint.cltvDelta,
+        minHtlc: 1n,
+        maxHtlc: hint.capacity,
+        disabled: false,
+      };
+      const list = hintEdges.get(hint.to) ?? [];
+      list.push(edge);
+      hintEdges.set(hint.to, list);
+    }
 
     const dist = new Map<Hex, bigint>();
     const amountAt = new Map<Hex, bigint>();
@@ -209,7 +267,14 @@ export class ChannelGraph {
       const amountToForward = amountAt.get(current)!;
       const outgoingCltv = cltvAt.get(current)!;
 
-      for (const edge of this.incoming(current)) {
+      /*
+       * Hinted edges are searched alongside the announced ones, but they live
+       * only for this call. They are the payee's claim about a channel nobody
+       * else can see, and folding them into the graph would let any invoice
+       * write into every future route calculation.
+       */
+      const hinted = hintEdges.get(current) ?? [];
+      for (const edge of [...this.incoming(current), ...hinted]) {
         if (visited.has(edge.from)) continue;
         if (exclude.has(edge.shortChannelId)) continue;
         if (amountToForward > edge.maxHtlc) continue;

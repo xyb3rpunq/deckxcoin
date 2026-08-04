@@ -34,6 +34,7 @@ import {
   canonicalAddress,
   isCanonicalAddress,
   isValidAddress,
+  pointFromSecret,
   PUBKEY_BYTES,
   sha256 as sha256Bytes,
   sign,
@@ -79,6 +80,11 @@ export interface TxInput {
    * an `htlc` output; omitting it takes the timeout branch.
    */
   readonly preimage?: Hex;
+  /**
+   * PTLC scalar — the discrete log of the output's point. Witness data, and the
+   * exact analogue of `preimage` for a `ptlc` output.
+   */
+  readonly scalar?: Hex;
 }
 
 export interface TxOutput {
@@ -100,6 +106,20 @@ export type OutputScript =
   | { readonly type: 'multisig2'; readonly keys: readonly [Hex, Hex] }
   /** Hash-time-locked contract: preimage before `timeout`, refund key after. */
   | { readonly type: 'htlc'; readonly hash: Hex; readonly timeout: number; readonly refundKey: Hex }
+  /**
+   * Point-time-locked contract. The hash lock's successor.
+   *
+   * Identical in shape to `htlc`, with the commitment replaced: instead of
+   * "reveal x where SHA256(x) = hash", it is "reveal t where t·G = point".
+   *
+   * The difference is what a *route* looks like. An HTLC uses the same hash at
+   * every hop, so two nodes anywhere on a route can compare what they were
+   * asked to forward and know they are carrying one payment. A PTLC gives each
+   * hop `T + rᵢ·G` for a blinding scalar only the sender knows, so what appears
+   * on-chain at one hop cannot be matched to another without solving a discrete
+   * logarithm.
+   */
+  | { readonly type: 'ptlc'; readonly point: Hex; readonly timeout: number; readonly refundKey: Hex }
   /**
    * Volt `to_local`: the owner may sweep only after `delay` blocks, but the
    * holder of `revocationKey` may sweep immediately and forever. This is what
@@ -166,6 +186,7 @@ export function serializeTx(tx: Transaction, opts: { withSignatures: boolean }):
       parts.push(lenPrefixed(fromHex(input.signature)));
       parts.push(lenPrefixed(utf8(input.cosign ? `${input.cosign.pubkey}:${input.cosign.signature}` : '')));
       parts.push(lenPrefixed(utf8(input.preimage ?? '')));
+      parts.push(lenPrefixed(utf8(input.scalar ?? '')));
     }
   }
 
@@ -438,6 +459,38 @@ export function checkTx(tx: Transaction, prevOuts: readonly PrevOut[]): TxCheck 
         }
         if (tx.lockTime < script.timeout) {
           return bad(`input ${i}: htlc refund requires lockTime >= ${script.timeout}`);
+        }
+      }
+    } else if (script.type === 'ptlc') {
+      /*
+       * Point-time-locked contract. Two branches, mutually exclusive, exactly
+       * as for `htlc` — only the commitment differs.
+       *
+       *   • scalar branch  — payee sweeps by revealing t where t·G = point;
+       *   • timeout branch — payer refunds after `timeout`.
+       *
+       * `pointForScalar` throws on a scalar outside [1, n), so a malformed
+       * witness takes the timeout branch rather than being treated as a claim.
+       */
+      let claimed = false;
+      if (input.scalar) {
+        try {
+          claimed = toHex(pointFromSecret(fromHex(input.scalar))) === script.point;
+        } catch {
+          claimed = false;
+        }
+      }
+      if (claimed) {
+        if (addressFromPubkey(pubkey) !== prev.address) {
+          return bad(`input ${i}: ptlc scalar branch requires the payee key`);
+        }
+      } else {
+        if (input.scalar) return bad(`input ${i}: ptlc scalar does not open the committed point`);
+        if (input.pubkey !== script.refundKey) {
+          return bad(`input ${i}: ptlc timeout branch requires the refund key`);
+        }
+        if (tx.lockTime < script.timeout) {
+          return bad(`input ${i}: ptlc refund requires lockTime >= ${script.timeout}`);
         }
       }
     } else if (script.type === 'revocable') {

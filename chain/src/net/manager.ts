@@ -18,6 +18,7 @@ import { createServer, Socket, type Server } from 'node:net';
 import { EventEmitter } from 'node:events';
 
 import { Peer, PEER_STATE, normaliseHost, type PeerInfo } from './peer.ts';
+import { dialThroughProxy, routeFor, type ProxyConfig } from './socks.ts';
 import { MSG, type AddrPayload, type WireMessage } from './wire.ts';
 import {
   MAX_INBOUND_PEERS,
@@ -29,9 +30,21 @@ import type { Hex, KeyPair } from '../crypto.ts';
 import { IDENTITY_VERDICT, isFatalVerdict, judgeIdentity } from './identity.ts';
 
 export interface ManagerOptions {
+  /** Route outbound connections through this SOCKS5 proxy. */
+  readonly proxy?: ProxyConfig;
   readonly params: NetworkParams;
   readonly store: ChainStore;
   readonly listenPort: number;
+  /**
+   * SOCKS5 proxy for outbound connections, usually Tor.
+   *
+   * The transport is already encrypted and identity-bound, so nobody on the
+   * path can read this node's traffic or impersonate its peers. None of that
+   * hides *where it is* — a node dialling from its own address tells every peer
+   * it meets, and the peer that receives a transaction first has a good guess
+   * about who wrote it.
+   */
+  readonly proxy?: ProxyConfig;
   readonly listenHost?: string;
   readonly userAgent: string;
   readonly genesis: Hex;
@@ -77,6 +90,7 @@ export class PeerManager extends EventEmitter {
     this.params = opts.params;
     this.store = opts.store;
     this.listenPort = opts.listenPort;
+    this.proxy = opts.proxy;
   }
 
   get outboundCount(): number {
@@ -175,8 +189,8 @@ export class PeerManager extends EventEmitter {
     this.#dialling.add(key);
 
     return new Promise((resolve) => {
-      const socket = new Socket();
       let settled = false;
+      const socket = new Socket();
 
       const fail = (reason: string) => {
         if (settled) return;
@@ -188,13 +202,10 @@ export class PeerManager extends EventEmitter {
         resolve(undefined);
       };
 
-      socket.setTimeout(10_000, () => fail('connect timeout'));
-      socket.once('error', (err) => fail(err.message));
-
-      socket.connect(port, host, () => {
-        socket.setTimeout(0);
+      const ready = (connected: Socket) => {
+        connected.setTimeout(0);
         this.#dialling.delete(key);
-        const peer = this.#attach(socket, true, port, expectedIdentity);
+        const peer = this.#attach(connected, true, port, expectedIdentity);
         peer.once('ready', () => {
           if (settled) return;
           settled = true;
@@ -206,7 +217,27 @@ export class PeerManager extends EventEmitter {
           settled = true;
           resolve(undefined);
         });
-      });
+      };
+
+      /*
+       * Through a proxy when one is configured, and always for a `.onion`
+       * address — which names no IP and cannot be reached any other way. The
+       * encrypted transport above does not need to know the difference; it
+       * gets a connected socket either way.
+       */
+      const route = routeFor(host, this.proxy);
+      if (route.error) return fail(route.error);
+
+      if (route.via === 'proxy') {
+        dialThroughProxy({ proxy: this.proxy!, host, port, timeoutMs: 30_000 }).then(ready, (err) =>
+          fail((err as Error).message),
+        );
+        return;
+      }
+
+      socket.setTimeout(10_000, () => fail('connect timeout'));
+      socket.once('error', (err) => fail(err.message));
+      socket.connect(port, host, () => ready(socket));
     });
   }
 

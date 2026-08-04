@@ -101,6 +101,19 @@ export interface FundingOutpoint {
   readonly script: OutputScript;
 }
 
+/** One applied splice. Kept so a resized channel can explain how it got there. */
+export interface SpliceRecord {
+  /** Commitment number the splice was applied at. */
+  readonly at: number;
+  readonly side: 'a' | 'b';
+  readonly spliceIn: bigint;
+  readonly spliceOut: bigint;
+  readonly capacityBefore: bigint;
+  readonly capacityAfter: bigint;
+  /** The output this splice spent. Still the one an old commitment refers to. */
+  readonly previousFunding: FundingOutpoint;
+}
+
 export interface CommitmentBundle {
   /** Commitment held by A — A's own output is delayed and revocable by B. */
   readonly forA: Transaction;
@@ -121,9 +134,16 @@ export class VoltChannel {
   readonly id: string;
   readonly a: ChannelParty;
   readonly b: ChannelParty;
-  readonly capacity: bigint;
   readonly csvDelay: number;
-  readonly funding: FundingOutpoint;
+  /*
+   * Capacity and funding are not readonly, because a splice changes both. Every
+   * other field of a channel is fixed for its lifetime; these two are the ones
+   * splicing exists to move.
+   */
+  capacity: bigint;
+  funding: FundingOutpoint;
+  /** Every splice applied, oldest first. The audit trail for a resized channel. */
+  readonly splices: SpliceRecord[] = [];
 
   balanceA: bigint;
   balanceB: bigint;
@@ -171,6 +191,110 @@ export class VoltChannel {
   /** Spendable balance = balance − in-flight HTLCs offered by that side. */
   spendable(side: 'a' | 'b'): bigint {
     return (side === 'a' ? this.balanceA : this.balanceB) - this.pendingOut(side);
+  }
+
+  /* ----------------------------------------------------------- splicing */
+
+  /**
+   * Resize the channel without closing it.
+   *
+   * ── What a splice is ──────────────────────────────────────────────────
+   * A channel's capacity is fixed by the output that funded it, so the only
+   * way to change it used to be to close and reopen: two on-chain
+   * transactions, a gap with no channel at all, and a new short channel id
+   * that every routing table has to relearn.
+   *
+   * A splice spends the funding output into a *new* funding output, with a
+   * different total, in one transaction — and the channel carries on. Extra
+   * money can be added (`in`), or some can be paid out to a party (`out`).
+   *
+   * ── The arithmetic that has to hold ───────────────────────────────────
+   *     new capacity = old capacity + spliced in − spliced out
+   * and the party doing it can only splice out what is actually theirs.
+   * Splicing out more than your balance is not resizing a channel; it is
+   * taking your counterparty's money.
+   *
+   * ── Why pending HTLCs are refused ─────────────────────────────────────
+   * An in-flight HTLC is a claim against the *current* funding output. A
+   * splice replaces that output, so every pending HTLC would need to be
+   * re-expressed against the new one, and for the period where both the old
+   * and new funding transactions are valid, against both at once. BOLT-2
+   * specifies exactly that and it is genuinely intricate.
+   *
+   * Refusing instead is a real limitation and it is stated as one: a node
+   * must wait for its HTLCs to resolve before resizing. That is a worse user
+   * experience and a much smaller surface for losing money.
+   */
+  splice(opts: {
+    /** Which party is putting money in or taking it out. */
+    readonly side: 'a' | 'b';
+    /** Zaps added to the channel from that party's on-chain funds. */
+    readonly spliceIn?: bigint;
+    /** Zaps paid out of the channel to that party. */
+    readonly spliceOut?: bigint;
+    /** The new funding outpoint, once the splice transaction is known. */
+    readonly funding: FundingOutpoint;
+  }): { ok: boolean; error?: string; record?: SpliceRecord } {
+    const spliceIn = opts.spliceIn ?? 0n;
+    const spliceOut = opts.spliceOut ?? 0n;
+
+    if (this.state !== CHANNEL_STATE.OPEN) {
+      return { ok: false, error: `cannot splice a channel that is ${this.state}` };
+    }
+    if (spliceIn < 0n || spliceOut < 0n) return { ok: false, error: 'splice amounts must not be negative' };
+    if (spliceIn === 0n && spliceOut === 0n) return { ok: false, error: 'a splice must move something' };
+
+    const pending = this.htlcs.filter((h) => h.status === HTLC_STATUS.PENDING).length;
+    if (pending > 0) {
+      return {
+        ok: false,
+        error: `cannot splice with ${pending} HTLC(s) in flight — wait for them to resolve`,
+      };
+    }
+
+    const balance = opts.side === 'a' ? this.balanceA : this.balanceB;
+    if (spliceOut > balance) {
+      return {
+        ok: false,
+        error: `cannot splice out ${spliceOut}: that side holds ${balance}`,
+      };
+    }
+
+    const newCapacity = this.capacity + spliceIn - spliceOut;
+    if (newCapacity <= 0n) return { ok: false, error: 'a splice cannot empty the channel — close it instead' };
+    if (opts.funding.value !== newCapacity) {
+      return {
+        ok: false,
+        error: `funding output is ${opts.funding.value}, expected ${newCapacity}`,
+      };
+    }
+    // The new output must still be the same two-party lock. A splice that
+    // quietly changed the script would be a channel handed to someone else.
+    if (opts.funding.address !== this.funding.address) {
+      return { ok: false, error: 'the spliced funding output must keep the same 2-of-2 address' };
+    }
+
+    const record: SpliceRecord = {
+      at: this.commitmentNumber,
+      side: opts.side,
+      spliceIn,
+      spliceOut,
+      capacityBefore: this.capacity,
+      capacityAfter: newCapacity,
+      previousFunding: this.funding,
+    };
+
+    if (opts.side === 'a') this.balanceA = this.balanceA + spliceIn - spliceOut;
+    else this.balanceB = this.balanceB + spliceIn - spliceOut;
+
+    this.capacity = newCapacity;
+    this.funding = opts.funding;
+    this.splices.push(record);
+    // The next commitment is against the new output, so the old one is stale
+    // in the ordinary way — revoked, and punishable if broadcast.
+    this.commitmentNumber++;
+
+    return { ok: true, record };
   }
 
   /* ------------------------------------------------------- commitments */

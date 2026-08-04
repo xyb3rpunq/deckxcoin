@@ -23,6 +23,7 @@ import { EventEmitter } from 'node:events';
 import { ChainState, ACCEPT, type AcceptResult } from './chainstate.ts';
 import { Mempool } from './mempool.ts';
 import { PeerManager } from '../net/manager.ts';
+import type { ProxyConfig } from '../net/socks.ts';
 import { Peer } from '../net/peer.ts';
 import {
   INV_TYPE,
@@ -59,6 +60,8 @@ export interface NodeOptions {
   readonly undoRetention?: number;
   /** Long-term identity. Generated and persisted in the datadir when omitted. */
   readonly identity?: KeyPair;
+  /** SOCKS5 proxy for outbound connections. Usually Tor. */
+  readonly proxy?: ProxyConfig;
 }
 
 /** Orphans are bounded — an attacker must not be able to fill memory with them. */
@@ -102,6 +105,7 @@ export class DeckxNode extends EventEmitter {
       );
 
     this.net = new PeerManager({
+      proxy: opts.proxy,
       params: opts.params,
       store: this.store,
       listenPort: opts.listenPort ?? opts.params.defaultPort,
