@@ -45,9 +45,14 @@ NETWORK="testnet"
 P2P_PORT=""
 RPC_PORT=""
 GATEWAY_PORT="8080"
+GATEWAY_RATE=""
+GATEWAY_TRUST_PROXY=""
 ENABLE_GATEWAY=0
 ENABLE_FAUCET=0
 FAUCET_AMOUNT="10"
+FAUCET_RESERVE=""
+FAUCET_DAILY_CAP=""
+FAUCET_COOLDOWN=""
 MINE_ADDRESS=""
 MINE_INTERVAL="30"
 CONNECT_PEERS=()
@@ -80,6 +85,13 @@ deploy.sh — provision a public DeckxCoin node
   --gateway-port <n>   gateway listen port               (default 8080)
   --faucet             enable the testnet faucet
   --faucet-amount <n>  DECKX per grant                   (default 10)
+  --faucet-reserve <n> DECKX kept back                   (default 100)
+  --faucet-daily-cap <n>  DECKX per rolling 24 hours     (default 5000)
+  --faucet-cooldown <m>   minutes between grants per address (default 60)
+  --gateway-rate <n>   requests per minute per client    (default 60)
+  --gateway-trust-proxy <n>  reverse proxies in front    (default 0)
+                       Set this if you run nginx or Caddy for TLS. Leave it 0
+                       if you do not — see docs/RUNNING-A-PUBLIC-TESTNET.md.
   --mine <address>     mine to this address
   --mine-interval <s>  seconds between attempts          (default 30)
   --connect <h:p#id>   peer to dial on start, repeatable
@@ -109,6 +121,11 @@ while [ $# -gt 0 ]; do
     --gateway-port)   GATEWAY_PORT="$2"; ENABLE_GATEWAY=1; shift 2 ;;
     --faucet)         ENABLE_FAUCET=1; shift ;;
     --faucet-amount)  FAUCET_AMOUNT="$2"; ENABLE_FAUCET=1; shift 2 ;;
+    --faucet-reserve) FAUCET_RESERVE="$2"; ENABLE_FAUCET=1; shift 2 ;;
+    --faucet-daily-cap) FAUCET_DAILY_CAP="$2"; ENABLE_FAUCET=1; shift 2 ;;
+    --faucet-cooldown) FAUCET_COOLDOWN="$2"; ENABLE_FAUCET=1; shift 2 ;;
+    --gateway-rate)   GATEWAY_RATE="$2"; ENABLE_GATEWAY=1; shift 2 ;;
+    --gateway-trust-proxy) GATEWAY_TRUST_PROXY="$2"; ENABLE_GATEWAY=1; shift 2 ;;
     --mine)           MINE_ADDRESS="$2"; shift 2 ;;
     --mine-interval)  MINE_INTERVAL="$2"; shift 2 ;;
     --connect)        CONNECT_PEERS+=("$2"); shift 2 ;;
@@ -144,7 +161,12 @@ build_args() {
   local -a a=(--network "$NETWORK" --datadir "$DATA_DIR" --host 0.0.0.0
               --port "$P2P_PORT" --rpcport "$RPC_PORT" --quiet)
   [ "$ENABLE_GATEWAY" = 1 ] && a+=(--gateway --gateway-port "$GATEWAY_PORT")
+  [ -n "$GATEWAY_RATE" ]        && a+=(--gateway-rate "$GATEWAY_RATE")
+  [ -n "$GATEWAY_TRUST_PROXY" ] && a+=(--gateway-trust-proxy "$GATEWAY_TRUST_PROXY")
   [ "$ENABLE_FAUCET" = 1 ]  && a+=(--faucet --faucet-amount "$FAUCET_AMOUNT")
+  [ -n "$FAUCET_RESERVE" ]   && a+=(--faucet-reserve "$FAUCET_RESERVE")
+  [ -n "$FAUCET_DAILY_CAP" ] && a+=(--faucet-daily-cap "$FAUCET_DAILY_CAP")
+  [ -n "$FAUCET_COOLDOWN" ]  && a+=(--faucet-cooldown "$FAUCET_COOLDOWN")
   [ -n "$MINE_ADDRESS" ]    && a+=(--mine "$MINE_ADDRESS" --mine-interval "$MINE_INTERVAL")
   for peer in ${CONNECT_PEERS+"${CONNECT_PEERS[@]}"}; do a+=(--connect "$peer"); done
   printf '%q ' "${a[@]}"
