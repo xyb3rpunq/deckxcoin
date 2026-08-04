@@ -50,6 +50,7 @@ import {
   peelOnion,
   wrapFailure,
   unwrapFailure,
+  PACKET_SIZE,
   type HopPayload,
   type OnionPacket,
 } from './onion.ts';
@@ -98,6 +99,45 @@ export interface ForwardEvent {
   readonly amountOut: bigint;
   readonly fee: bigint;
   readonly cltv: number;
+}
+
+/** One delivered-but-unsettled payment, or part of one. */
+interface HeldPart {
+  readonly amount: bigint;
+  readonly added: Array<{ channel: VoltChannel; htlc: Htlc; side: 'a' | 'b' }>;
+  readonly route: Route;
+}
+
+interface DeliveryResult {
+  readonly ok: boolean;
+  readonly error?: string;
+  readonly failedAt?: string;
+  readonly forwards: ForwardEvent[];
+  /** HTLCs left pending along the route. Empty when delivery failed. */
+  readonly added: Array<{ channel: VoltChannel; htlc: Htlc; side: 'a' | 'b' }>;
+  /** Channel to avoid on the next attempt, when the failure named one. */
+  readonly blameChannel?: bigint;
+}
+
+export interface PartResult {
+  readonly amount: bigint;
+  readonly ok: boolean;
+  readonly error?: string;
+  readonly failedAt?: string;
+  readonly route?: Route;
+}
+
+export interface MultiPartResult {
+  readonly ok: boolean;
+  readonly error?: string;
+  readonly preimage?: Hex;
+  /** Every part tried, successful or not, in the order they were attempted. */
+  readonly parts: readonly PartResult[];
+  readonly forwards: readonly ForwardEvent[];
+  readonly amountSent?: bigint;
+  readonly feesPaid?: bigint;
+  /** How many parts the payment finally took. Zero on failure. */
+  readonly partsUsed?: number;
 }
 
 export interface PaymentResult {
@@ -343,8 +383,274 @@ export class VoltNetwork {
     return { ok: false, error: lastError, forwards: [] };
   }
 
+  /* ═════════════════════════════════════════════ multi-part payments ══ */
+
+  /**
+   * Pay an invoice by splitting it across several routes.
+   *
+   * ── What this solves ──────────────────────────────────────────────────
+   * A channel's capacity is a ceiling on any single payment through it. A node
+   * with five channels of 2 DECKX each holds 10 DECKX and, without this, cannot
+   * send 3. The liquidity exists; it is merely in pieces. Splitting the payment
+   * to match is the whole idea.
+   *
+   * ── The property that makes it safe ───────────────────────────────────
+   * **The receiver must not reveal the preimage until every part has arrived.**
+   *
+   * The preimage is the receipt: releasing it settles whichever HTLCs are
+   * outstanding and lets each of them be claimed. Release it after two parts of
+   * three and the payer has bought a full receipt for two thirds of the price —
+   * and the invoice is marked paid. So parts are *held*, not settled, and the
+   * preimage is only revealed once the total is present.
+   *
+   * The converse matters as much: a set that never completes must release every
+   * part. Held HTLCs are locked funds for the payer and locked liquidity for
+   * every node in between, so a stalled payment that is not unwound is an
+   * outage that spreads.
+   *
+   * ── What binds the parts together ─────────────────────────────────────
+   * The payment hash, and the payment secret. The hash alone is not enough:
+   * every node that forwarded a part knows it, and could send its own part to
+   * the same destination. The secret is in the invoice and reaches only the
+   * final hop, so a part carrying the wrong one is refused on arrival.
+   */
+  payInvoiceMultiPart(
+    from: VoltNode,
+    encoded: string,
+    opts: {
+      currentHeight: number;
+      now?: number;
+      /** Most parts to split into. More parts means more routes and more fees. */
+      maxParts?: number;
+    } = { currentHeight: 0 },
+  ): MultiPartResult {
+    const maxParts = Math.max(1, opts.maxParts ?? 5);
+
+    let invoice: Invoice;
+    try {
+      invoice = decodeInvoice(encoded);
+    } catch (err) {
+      return { ok: false, error: `invoice decode failed: ${(err as Error).message}`, parts: [], forwards: [] };
+    }
+
+    const invoiceCheck = checkInvoice(invoice, opts.now);
+    if (!invoiceCheck.ok) return { ok: false, error: invoiceCheck.error, parts: [], forwards: [] };
+    if (!this.nodes.has(invoice.payee)) {
+      return { ok: false, error: 'payee is not reachable on this network', parts: [], forwards: [] };
+    }
+
+    const total = invoice.amount;
+    const held: HeldPart[] = [];
+    const forwards: ForwardEvent[] = [];
+    const parts: PartResult[] = [];
+    const excluded = new Set<bigint>();
+
+    let remaining = total;
+    let attempts = 0;
+    // Each part needs a route, and each failed route costs an attempt. The
+    // ceiling stops a node with many tiny channels from searching forever.
+    const attemptLimit = maxParts * 3;
+
+    while (remaining > 0n && attempts < attemptLimit) {
+      attempts++;
+
+      /*
+       * Ask for the whole remainder first. If a single route can carry it, that
+       * is the cheapest answer — one HTLC, one set of fees, and no holding
+       * period. Splitting is a fallback, not a strategy.
+       */
+      let route = this.graph.findRoute({
+        source: from.id,
+        destination: invoice.payee,
+        amount: remaining,
+        finalCltvDelta: invoice.minFinalCltv,
+        currentHeight: opts.currentHeight,
+        exclude: excluded,
+      });
+
+      let partAmount = remaining;
+
+      if (!route) {
+        // Halve until something fits. Binary search on the amount rather than
+        // guessing a split up front: the sender cannot see anyone's balances,
+        // so the only way to learn what a path will carry is to ask.
+        let probe = remaining / 2n;
+        while (probe > 0n && !route) {
+          route = this.graph.findRoute({
+            source: from.id,
+            destination: invoice.payee,
+            amount: probe,
+            finalCltvDelta: invoice.minFinalCltv,
+            currentHeight: opts.currentHeight,
+            exclude: excluded,
+          });
+          if (route) {
+            partAmount = probe;
+            break;
+          }
+          probe /= 2n;
+        }
+      }
+
+      if (!route) {
+        return this.#abandonParts(
+          held,
+          parts,
+          forwards,
+          held.length === 0
+            ? 'no route found for any amount'
+            : `no route for the remaining ${remaining} zaps after ${held.length} part(s)`,
+        );
+      }
+
+      if (parts.length >= maxParts) {
+        return this.#abandonParts(
+          held,
+          parts,
+          forwards,
+          `would need more than ${maxParts} parts`,
+        );
+      }
+
+      const delivered = this.#deliver(from, invoice, route, partAmount, total);
+      forwards.push(...delivered.forwards);
+
+      if (!delivered.ok) {
+        parts.push({ amount: partAmount, ok: false, error: delivered.error, failedAt: delivered.failedAt });
+        // The failed part has already unwound itself. Exclude the channel that
+        // refused and try the remainder again — the others stay held.
+        const failedHop = route.hops.find((h) => this.nodes.get(h.from)?.name === delivered.failedAt);
+        if (failedHop) excluded.add(failedHop.shortChannelId);
+        else if (delivered.blameChannel !== undefined) excluded.add(delivered.blameChannel);
+        else {
+          return this.#abandonParts(held, parts, forwards, delivered.error ?? 'part failed');
+        }
+        continue;
+      }
+
+      held.push({ amount: partAmount, added: delivered.added, route });
+      parts.push({ amount: partAmount, ok: true, route });
+      remaining -= partAmount;
+    }
+
+    if (remaining > 0n) {
+      return this.#abandonParts(held, parts, forwards, `gave up with ${remaining} zaps unrouted`);
+    }
+
+    /* --- every part is held; now, and only now, settle --------------- */
+    return this.#settleParts(this.node(invoice.payee), invoice, held, parts, forwards);
+  }
+
+  /**
+   * Release every held part, in one step.
+   *
+   * The checks here are the receiver's, and they run before a single HTLC is
+   * settled — because the first settlement publishes the preimage, and after
+   * that there is no taking it back.
+   */
+  #settleParts(
+    payee: VoltNode,
+    invoice: Invoice,
+    held: HeldPart[],
+    parts: PartResult[],
+    forwards: ForwardEvent[],
+  ): MultiPartResult {
+    const record = payee.invoices.get(invoice.paymentHash);
+    if (!record) return this.#abandonParts(held, parts, forwards, 'payee does not recognise this payment hash');
+    if (record.settled) return this.#abandonParts(held, parts, forwards, 'invoice already settled');
+    if (!isReceiptFor(invoice, record.preimage)) {
+      return this.#abandonParts(held, parts, forwards, 'payee preimage does not match invoice');
+    }
+
+    const arrived = held.reduce((sum, p) => sum + p.amount, 0n);
+    if (arrived < invoice.amount) {
+      // Unreachable through the loop above, which only reaches here at zero
+      // remaining. Kept because it is the one invariant whose violation costs
+      // the payee money, and an assertion that never fires is cheap.
+      return this.#abandonParts(
+        held,
+        parts,
+        forwards,
+        `refusing to settle: ${arrived} of ${invoice.amount} arrived`,
+      );
+    }
+
+    for (const part of held) {
+      for (let i = part.added.length - 1; i >= 0; i--) {
+        const { channel, htlc } = part.added[i];
+        channel.settleHtlc(htlc.id, record.preimage);
+      }
+    }
+    record.settled = true;
+
+    const totalSent = held.reduce((sum, p) => sum + p.route.totalAmount, 0n);
+    const totalFees = held.reduce((sum, p) => sum + p.route.totalFees, 0n);
+
+    return {
+      ok: true,
+      preimage: record.preimage,
+      parts,
+      forwards,
+      amountSent: totalSent,
+      feesPaid: totalFees,
+      partsUsed: held.length,
+    };
+  }
+
+  /**
+   * Fail every part that is still held.
+   *
+   * A part that has been delivered but not settled is money locked at the payer
+   * and liquidity locked at every hop it crossed. Leaving those in place because
+   * the payment "failed anyway" is how one bad payment becomes a stuck channel.
+   */
+  #abandonParts(
+    held: HeldPart[],
+    parts: PartResult[],
+    forwards: ForwardEvent[],
+    error: string,
+  ): MultiPartResult {
+    for (const part of held) {
+      for (let i = part.added.length - 1; i >= 0; i--) {
+        const { channel, htlc } = part.added[i];
+        if (htlc.status === HTLC_STATUS.PENDING) channel.failHtlc(htlc.id, error);
+      }
+    }
+    return { ok: false, error, parts, forwards, partsUsed: 0 };
+  }
+
+  /**
+   * Single-part payment: deliver, then settle at once.
+   *
+   * The two halves are separate because a multi-part payment has to hold
+   * between them — see `payInvoiceMultiPart`.
+   */
   #attempt(from: VoltNode, invoice: Invoice, route: Route): PaymentResult {
-    /* --- build the onion --------------------------------------------- */
+    const delivered = this.#deliver(from, invoice, route, invoice.amount, invoice.amount);
+    if (!delivered.ok) {
+      return { ok: false, error: delivered.error, failedAt: delivered.failedAt, forwards: delivered.forwards };
+    }
+    return this.#settle(this.node(invoice.payee), invoice, delivered.added, route, delivered.forwards);
+  }
+
+  /**
+   * Carry one payment (or one part of one) to the payee and stop there.
+   *
+   * Every HTLC along the way is added and left *pending*. Nothing is settled:
+   * that requires the preimage, and releasing the preimage is a decision the
+   * caller makes once it knows whether the whole payment has arrived.
+   *
+   * `partAmount` is what this delivery carries; `totalAmount` is what the
+   * invoice is for. They are equal for an ordinary payment, and differ when the
+   * payment was split — which is precisely what tells the payee to wait.
+   */
+  #deliver(
+    from: VoltNode,
+    invoice: Invoice,
+    route: Route,
+    partAmount: bigint,
+    totalAmount: bigint,
+  ): DeliveryResult {
     const hopPubkeys: Hex[] = route.hops.map((h) => h.to);
     /*
      * Payload `i` is read by `hops[i].to`, and describes what *that* node must
@@ -355,18 +661,22 @@ export class VoltNetwork {
      */
     const payloads: HopPayload[] = route.hops.map((hop, i) => {
       const next = route.hops[i + 1];
+      const final = next === undefined;
       return {
-        shortChannelId: next ? next.shortChannelId : 0n,
-        amountToForward: next ? next.amountToForward : hop.amountToForward,
-        outgoingCltv: next ? next.outgoingCltv : hop.outgoingCltv,
-        final: next === undefined,
+        shortChannelId: final ? 0n : next.shortChannelId,
+        amountToForward: final ? hop.amountToForward : next.amountToForward,
+        outgoingCltv: final ? hop.outgoingCltv : next.outgoingCltv,
+        final,
+        // Only the last hop is told the total and the secret. A forwarding node
+        // that learned either would learn how much of a split it is carrying,
+        // and that it is on the path to the payee.
+        ...(final ? { totalAmount, paymentSecret: invoice.paymentSecret } : {}),
       };
     });
 
     const assoc = fromHex(invoice.paymentHash);
     const built = buildOnion(hopPubkeys, payloads, assoc);
 
-    /* --- forward the HTLCs ------------------------------------------- */
     const forwards: ForwardEvent[] = [];
     const added: Array<{ channel: VoltChannel; htlc: Htlc; side: 'a' | 'b' }> = [];
     let packet: OnionPacket | undefined = built.packet;
@@ -374,42 +684,41 @@ export class VoltNetwork {
     let incomingAmount = route.totalAmount;
     let incomingCltv = route.totalCltv;
 
+    const abort = (error: string, failedAt?: string, blameChannel?: bigint): DeliveryResult => {
+      for (let i = added.length - 1; i >= 0; i--) {
+        const { channel, htlc } = added[i];
+        if (htlc.status === HTLC_STATUS.PENDING) channel.failHtlc(htlc.id, error);
+      }
+      return { ok: false, error, failedAt, forwards, added: [], blameChannel };
+    };
+
     for (let i = 0; i < route.hops.length; i++) {
       const hop = route.hops[i];
       const receiver = this.node(hop.to);
       const nodeChannel = sender.channels.get(hop.shortChannelId);
-      if (!nodeChannel) {
-        return this.#unwind(added, `no channel ${hop.shortChannelId} at ${sender.name}`, sender.name, forwards);
-      }
-      const channel = nodeChannel.channel;
+      if (!nodeChannel) return abort(`no channel ${hop.shortChannelId} at ${sender.name}`, sender.name);
 
+      const channel = nodeChannel.channel;
       if (channel.state !== CHANNEL_STATE.OPEN) {
-        return this.#unwind(added, `channel ${channel.id} is ${channel.state}`, sender.name, forwards);
+        return abort(`channel ${channel.id} is ${channel.state}`, sender.name, hop.shortChannelId);
       }
       if (channel.spendable(nodeChannel.side) < incomingAmount) {
-        return this.#unwind(
-          added,
+        return abort(
           `insufficient liquidity on ${channel.id}: have ${channel.spendable(nodeChannel.side)}, need ${incomingAmount}`,
           sender.name,
-          forwards,
+          hop.shortChannelId,
         );
       }
 
-      const htlc = channel.addHtlc(
-        nodeChannel.side,
-        incomingAmount,
-        invoice.paymentHash,
-        incomingCltv,
-      );
+      const htlc = channel.addHtlc(nodeChannel.side, incomingAmount, invoice.paymentHash, incomingCltv);
       added.push({ channel, htlc, side: nodeChannel.side });
 
-      /* --- receiver peels its layer ---------------------------------- */
-      if (!packet) return this.#unwind(added, 'onion exhausted before route end', receiver.name, forwards);
+      if (!packet) return abort('onion exhausted before route end', receiver.name);
       let peeled;
       try {
         peeled = peelOnion(packet, receiver.party.key.privateKey, assoc);
       } catch (err) {
-        return this.#unwind(added, `onion rejected at ${receiver.name}: ${(err as Error).message}`, receiver.name, forwards);
+        return abort(`onion rejected at ${receiver.name}: ${(err as Error).message}`, receiver.name);
       }
 
       // A forwarding node must be paid: what it receives must exceed what it
@@ -417,10 +726,10 @@ export class VoltNetwork {
       // — or to lose money.
       if (!peeled.payload.final) {
         if (peeled.payload.amountToForward >= incomingAmount) {
-          return this.#unwind(added, `fee insufficient at ${receiver.name}`, receiver.name, forwards);
+          return abort(`fee insufficient at ${receiver.name}`, receiver.name);
         }
         if (peeled.payload.outgoingCltv >= incomingCltv) {
-          return this.#unwind(added, `cltv delta insufficient at ${receiver.name}`, receiver.name, forwards);
+          return abort(`cltv delta insufficient at ${receiver.name}`, receiver.name);
         }
       }
 
@@ -435,12 +744,46 @@ export class VoltNetwork {
 
       if (peeled.payload.final) {
         if (i !== route.hops.length - 1) {
-          return this.#unwind(added, `onion says final at hop ${i} but route continues`, receiver.name, forwards);
+          return abort(`onion says final at hop ${i} but route continues`, receiver.name);
         }
-        if (peeled.payload.amountToForward < invoice.amount) {
-          return this.#unwind(added, `underpaid: ${peeled.payload.amountToForward} < ${invoice.amount}`, receiver.name, forwards);
+        /*
+         * The payee's acceptance checks. All of them run before anything is
+         * held, because a part that can never be settled should not tie up
+         * liquidity while the rest of the payment is assembled.
+         *
+         * Note what the secret is compared against: the record the *payee*
+         * kept when it issued the invoice — not the invoice the payer handed
+         * over. Checking the onion against the payer's own copy would be
+         * checking a claim against itself, and would accept any invoice a payer
+         * chose to construct. The whole point is that only someone who read the
+         * payee's invoice knows this value.
+         */
+        const issued = receiver.invoices.get(invoice.paymentHash);
+        if (!issued) {
+          return abort(`${receiver.name} does not recognise this payment hash`, receiver.name);
         }
-        return this.#settle(receiver, invoice, added, route, forwards, built.packet);
+        if (issued.settled) {
+          // Refused on arrival rather than after the set assembles. Holding
+          // parts for an invoice that is already paid locks liquidity across
+          // every hop for a payment that can never complete.
+          return abort(`invoice already settled at ${receiver.name}`, receiver.name);
+        }
+        if (peeled.payload.paymentSecret !== issued.invoice.paymentSecret) {
+          return abort(`payment secret mismatch at ${receiver.name}`, receiver.name);
+        }
+        if (peeled.payload.totalAmount !== totalAmount) {
+          return abort(
+            `parts disagree on the total: this one says ${peeled.payload.totalAmount}, expected ${totalAmount}`,
+            receiver.name,
+          );
+        }
+        if (peeled.payload.amountToForward < partAmount) {
+          return abort(
+            `part underpaid: ${peeled.payload.amountToForward} < ${partAmount}`,
+            receiver.name,
+          );
+        }
+        return { ok: true, added, forwards };
       }
 
       incomingAmount = peeled.payload.amountToForward;
@@ -449,8 +792,9 @@ export class VoltNetwork {
       sender = receiver;
     }
 
-    return this.#unwind(added, 'route ended without reaching the payee', undefined, forwards);
+    return abort('route ended without reaching the payee');
   }
+
 
   /** Reveal the preimage at the destination and settle every HTLC backwards. */
   #settle(
@@ -459,7 +803,6 @@ export class VoltNetwork {
     added: Array<{ channel: VoltChannel; htlc: Htlc; side: 'a' | 'b' }>,
     route: Route,
     forwards: ForwardEvent[],
-    onion: OnionPacket,
   ): PaymentResult {
     const record = payee.invoices.get(invoice.paymentHash);
     if (!record) {
@@ -486,8 +829,7 @@ export class VoltNetwork {
       forwards,
       amountSent: route.totalAmount,
       feesPaid: route.totalFees,
-      onionSize: 1 + 33 + 1300 + 32,
-      ...{ onion: undefined },
+      onionSize: PACKET_SIZE,
     };
   }
 

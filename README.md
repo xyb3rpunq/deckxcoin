@@ -8,7 +8,7 @@
 
 **Bitcoin's UTXO value layer · an Ethereum-style contract layer that holds no balance · a Lightning-style channel network**
 
-[![tests](https://img.shields.io/badge/tests-331%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![tests](https://img.shields.io/badge/tests-362%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
 [![node](https://img.shields.io/badge/full%20node-P2P%20%2B%20reorg%20%2B%20SQLite-38d9ff?style=flat-square&labelColor=0c0f18)](#-running-a-node)
 [![supply](https://img.shields.io/badge/supply-21%2C000%2C000%20DECKX-ff2d55?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![halving](https://img.shields.io/badge/halving-every%20365%20days-ffb020?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
@@ -82,7 +82,7 @@ flowchart TB
     subgraph L2["⚡ Volt — channel layer"]
         V1[2-of-2 funding] --- V2[asymmetric commitments]
         V2 --- V3[HTLCs + penalties]
-        V3 --- V4[Sphinx onion · 1366 B]
+        V3 --- V4[Sphinx onion · 1986 B]
         V5 --- V6[watchtower]
         V4 --- V5[reverse-Dijkstra routing]
     end
@@ -487,8 +487,16 @@ test/gateway.test.ts      25  a positive allowlist, not a denylist · every dang
 test/address-canonical    10  ONE ADDRESS, ONE STRING — uppercase bech32 refused by
              .test.ts         consensus · normalised at every place a human types
                               one · the faucet cooldown survives a shift key
+test/mpp.test.ts          14  splitting a payment across channels too small to
+                              carry it · THE RECEIPT IS HELD UNTIL THE TOTAL
+                              ARRIVES · a failed split locks nothing · a part
+                              with the wrong payment secret is refused
+test/pq.test.ts           17  WOTS+ hash-based signatures · why the checksum
+                              exists · reuse measured signature by signature ·
+                              A FORGED SIGNATURE THE REAL VERIFIER ACCEPTS ·
+                              unspent outputs are already behind a hash
                           ───
-                          331
+                          362
 ```
 
 **The test suite is the specification.** If a claim on the website or in this README is not backed by
@@ -526,6 +534,7 @@ chain/
 ├─ src/
 │  ├─ crypto.ts       hashes · keys · bech32m addresses · EC point/scalar combining
 │  ├─ merkle.ts       Bitcoin tx tree (+ CVE-2012-2459 guard) · state trie
+│  ├─ pq.ts           WOTS+ hash-based signatures · exposure analysis
 │  ├─ vm.ts           DVM — 44 opcodes (102 instructions) · gas table · assembler
 │  ├─ tx.ts           transaction model · sighash · script types · validation
 │  ├─ block.ts        header · PoW · nBits · retarget · issuance schedule
@@ -565,7 +574,7 @@ chain/
 │     ├─ invoice.ts     bech32m `lnvolt1…` signed payment requests
 │     ├─ network.ts     nodes · channel lifecycle · end-to-end routed payments
 │     └─ watchtower.ts  encrypted breach blobs the tower cannot read
-├─ test/              331 tests across 18 files
+├─ test/              362 tests across 20 files
 └─ scripts/
    ├─ testnet.ts             launch a local multi-node network
    ├─ deploy.sh              provision a public node on a fresh server

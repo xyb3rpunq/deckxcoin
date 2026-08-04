@@ -207,7 +207,7 @@ the same idea with a smaller index space.
 
 ---
 
-## 11. Why the onion is exactly 1366 bytes
+## 11. Why the onion is exactly one size
 
 `src/volt/onion.ts`
 

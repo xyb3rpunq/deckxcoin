@@ -310,7 +310,7 @@ The genesis block carries the line *"Every exit liquidity was once someone
 conviction."* A token with a small pool and no users is how that sentence
 happens to somebody.
 
-**What is actually worth something here** is the code: a chain with 331 tests,
+**What is actually worth something here** is the code: a chain with 362 tests,
 BIP-340 verified against the official vectors, a working man-in-the-middle test,
 reorganisation with undo records, and a wallet whose recovery test throws the
 wallet away and rebuilds it from the words. That is a portfolio. A token with a

@@ -56,6 +56,21 @@ export interface Invoice {
   readonly payee: Hex;
   /** SHA256 of the human-readable description. Keeps the invoice short. */
   readonly descriptionHash: Hex;
+  /**
+   * A per-invoice secret, echoed back by the payer in the final onion hop.
+   *
+   * It proves the payer read *this* invoice, rather than merely learning the
+   * payment hash. Any node that forwards a payment learns the hash, and without
+   * this it could send its own payment to the same destination — confirming it
+   * is one hop from the payee, and letting it interfere with a multi-part
+   * payment it was never part of. BOLT-11 carries the same field for the same
+   * reason.
+   *
+   * Distinct from the *preimage*: the preimage is the receipt and is revealed
+   * on settlement; the secret is known to payer and payee from the start and is
+   * never published.
+   */
+  readonly paymentSecret: Hex;
   readonly signature: Hex;
 }
 
@@ -78,7 +93,7 @@ export function paymentSecretFromSeed(seed: string): PaymentSecret {
 
 /* --------------------------------------------------------------- encoding */
 
-const BODY_SIZE = 1 + 8 + 8 + 4 + 4 + 32 + 32 + 32; // 121 — payee is x-only
+const BODY_SIZE = 1 + 8 + 8 + 4 + 4 + 32 + 32 + 32 + 32; // 153 — payee is x-only
 
 function encodeBody(inv: Omit<Invoice, 'signature'>): Uint8Array {
   return concat(
@@ -90,6 +105,7 @@ function encodeBody(inv: Omit<Invoice, 'signature'>): Uint8Array {
     fromHex(inv.paymentHash),
     fromHex(inv.payee),
     fromHex(inv.descriptionHash),
+    fromHex(inv.paymentSecret),
   );
 }
 
@@ -104,6 +120,7 @@ function decodeBody(b: Uint8Array): Omit<Invoice, 'signature'> {
     paymentHash: toHex(b.subarray(25, 57)),
     payee: toHex(b.subarray(57, 89)),
     descriptionHash: toHex(b.subarray(89, 121)),
+    paymentSecret: toHex(b.subarray(121, 153)),
   };
 }
 
@@ -119,6 +136,8 @@ export function createInvoice(opts: {
   timestamp?: number;
   expirySeconds?: number;
   minFinalCltv?: number;
+  /** Pin the secret; otherwise a fresh random one is generated. */
+  paymentSecret?: Hex;
 }): Invoice {
   const unsigned: Omit<Invoice, 'signature'> = {
     version: INVOICE_VERSION,
@@ -129,6 +148,9 @@ export function createInvoice(opts: {
     paymentHash: opts.paymentHash,
     payee: toHex(opts.payee.publicKey),
     descriptionHash: toHex(sha256(utf8(opts.description))),
+    // Random unless the caller pins one, so that two invoices for the same
+    // amount and description are still distinguishable to their payer alone.
+    paymentSecret: opts.paymentSecret ?? toHex(randomPrivateKey()),
   };
   const signature = sign(signingDigest(encodeBody(unsigned)), opts.payee.privateKey);
   return { ...unsigned, signature };

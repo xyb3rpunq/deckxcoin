@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckxCoin — REKT protocol · Bitcoin UTXO + Ethereum contracts + Volt channels</title>
-<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 331 passing tests.">
+<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 362 passing tests.">
 <meta name="theme-color" content="#05060a">
 <meta property="og:title" content="DeckxCoin — REKT protocol">
 <meta property="og:description" content="Bitcoin's UTXO layer, Ethereum's contract layer, Lightning's channel layer. One chain. Mined genesis, not hardcoded.">
@@ -54,14 +54,14 @@
     <p data-i18n="header.p2" class="lede">
       Every chain you have been rugged by started with a whitepaper you did not read.
       This one ships <strong>the whitepaper, the chain, and the tests together</strong> — a genesis
-      block that was <strong>mined, not hard-coded</strong>, 331 tests that fail loudly when the
+      block that was <strong>mined, not hard-coded</strong>, 362 tests that fail loudly when the
       cryptography is wrong, and source that carries its reasoning inline.
     </p>
 
     <div class="hero-stats" id="hero-stats">
       <div class="stat"><span class="stat-label">genesis hash</span><span class="stat-value mono" data-bind="genesis.hash.short">—</span></div>
       <div class="stat"><span class="stat-label">proof of work</span><span class="stat-value mono" data-bind="genesis.attempts">—</span></div>
-      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">331 / 331</span></div>
+      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">362 / 362</span></div>
       <div class="stat"><span class="stat-label">supply audit</span><span class="stat-value mono ok" data-bind="supply.status">—</span></div>
     </div>
 
@@ -567,7 +567,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
         <tr><td data-i18n="volt.td13">Per-commitment secrets</td><td>BOLT 3</td><td data-i18n="volt.td15">Hash chain of depth 4096 — revealing secret <em>i</em> derives every earlier secret, so storage is O(1). BOLT-03 uses a 48-bit indexed tree for the same property.</td><td data-i18n="volt.td16" class="done">implemented</td></tr>
         <tr><td data-i18n="volt.td17">HTLCs</td><td>BOLT 3</td><td data-i18n="volt.td19">Hash + absolute timeout, two mutually exclusive branches, both validated by the real chain in tests: preimage sweep and timeout refund.</td><td data-i18n="volt.td20" class="done">implemented</td></tr>
         <tr><td data-i18n="volt.td21">Penalty transaction</td><td>BOLT 5</td><td data-i18n="volt.td23">Sweeps both the cheater's delayed output and the punisher's own, in one transaction, with no CSV wait.</td><td data-i18n="volt.td24" class="done">implemented</td></tr>
-        <tr><td data-i18n="volt.td25">Sphinx onion routing</td><td>BOLT 4</td><td data-i18n="volt.td27">1366-byte constant-size packet, 20 hop slots, ephemeral-key blinding chain, deterministic filler, per-hop HMAC.</td><td data-i18n="volt.td28" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td25">Sphinx onion routing</td><td>BOLT 4</td><td data-i18n="volt.td27">1986-byte constant-size packet, 20 hop slots, ephemeral-key blinding chain, deterministic filler, per-hop HMAC.</td><td data-i18n="volt.td28" class="done">implemented</td></tr>
         <tr><td data-i18n="volt.td29">Invoices</td><td>BOLT 11</td><td data-i18n="volt.td31">bech32m <code>lnvolt1…</code>, signed by the payee, with amount, payment hash, expiry and min-final-CLTV.</td><td data-i18n="volt.td32" class="done">implemented</td></tr>
         <tr><td data-i18n="volt.td33">Pathfinding</td><td>—</td><td data-i18n="volt.td34">Reverse Dijkstra with amount-dependent fees and a time-lock risk factor; returns ranked alternatives because balances are private.</td><td data-i18n="volt.td35" class="done">implemented</td></tr>
         <tr><td data-i18n="volt.td36">PTLCs (point time-locks)</td><td data-i18n="volt.td37">draft</td><td data-i18n="volt.td38">Every channel already carries the adaptor point, and signatures are now BIP-340 Schnorr — the scheme adaptor signatures require. Settlement still uses hash locks.</td><td data-i18n="volt.td39" class="partial">scaffolded</td></tr>
@@ -599,7 +599,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   </div>
 
   <div class="prose">
-    <h3 data-i18n="volt.h31">Why the onion is 1366 bytes no matter what</h3>
+    <h3 data-i18n="volt.h31">Why the onion is one size no matter what</h3>
     <p data-i18n="volt.p5">
       A one-hop route and a twenty-hop route produce byte-identical packet sizes. Each hop shifts the
       routing block and appends fresh keystream to the tail; without the sender's pre-computed
@@ -676,7 +676,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
         </tr>
         <tr>
           <td data-i18n="network.td15">Wire encryption</td>
-          <td data-i18n="network.td16">Ephemeral ECDH, then ChaCha20-Poly1305 per frame. Plaintext frames let anyone on the path see which transactions originate at which node — a deanonymisation oracle given away for free. The <em>length prefix is encrypted too</em>, because message sizes are a fingerprint: 1366 bytes is an onion, 24 bytes is a handshake acknowledgement. Keys ratchet forward every 4096 frames.</td>
+          <td data-i18n="network.td16">Ephemeral ECDH, then ChaCha20-Poly1305 per frame. Plaintext frames let anyone on the path see which transactions originate at which node — a deanonymisation oracle given away for free. The <em>length prefix is encrypted too</em>, because message sizes are a fingerprint: 1986 bytes is an onion, 24 bytes is a handshake acknowledgement. Keys ratchet forward every 4096 frames.</td>
         </tr>
         <tr>
           <td data-i18n="network.td17">Identity binding</td>
@@ -878,7 +878,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
         <tr><td data-i18n="params.td37">Transaction id</td><td data-i18n="params.td38">tagged double-SHA256</td><td data-i18n="params.td39">Excludes all witness data — non-malleable from genesis</td></tr>
         <tr><td data-i18n="params.td40">Channel CSV delay</td><td><code>144 blocks</code></td><td data-i18n="params.td42">≈ 1 day</td></tr>
         <tr><td data-i18n="params.td43">Channel dust limit</td><td><code>546 zaps</code></td><td data-i18n="params.td45">Outputs below this are dropped, per BOLT 3</td></tr>
-        <tr><td data-i18n="params.td46">Onion packet</td><td><code>1366 bytes</code></td><td data-i18n="params.td48">20 hop slots × 65 B + version + ephemeral + HMAC</td></tr>
+        <tr><td data-i18n="params.td46">Onion packet</td><td><code>1986 bytes</code></td><td data-i18n="params.td48">20 hop slots × 96 B + version + ephemeral + HMAC</td></tr>
       </tbody>
     </table>
   </div>
@@ -898,7 +898,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 cd deckxcoin/chain
 npm install
 
-npm test              <span class="c"># 331 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
+npm test              <span class="c"># 362 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
 node src/cli.ts genesis    <span class="c"># mine and verify the genesis block</span>
 node src/cli.ts verify     <span class="c"># prove genesis is reproducible</span>
 node src/cli.ts volt       <span class="c"># routed off-chain payment across two channels</span>
@@ -944,9 +944,9 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
         <tr><td data-i18n="audit.td13">Mining</td><td data-i18n="audit.td14" class="partial">reference only</td><td data-i18n="audit.td15">Single-threaded, no work distribution, no stratum. It exists to prove the header is honest, not to compete.</td></tr>
         <tr><td data-i18n="audit.td16">Gas refunds</td><td data-i18n="audit.td17" class="partial">simplified</td><td data-i18n="audit.td18">The fee must cover <code>gasUsed × gasPrice</code>; unused reservation becomes a miner tip rather than being refunded to a change output.</td></tr>
         <tr><td data-i18n="audit.td19">Volt watchtowers</td><td data-i18n="audit.td20" class="todo">implemented</td><td data-i18n="audit.td21">Encrypted blobs the tower cannot read, fee ladders with escalation, signed receipts and retention audits. A single tower is still a single point of failure — there is no reputation network and no multi-tower redundancy.</td></tr>
-        <tr><td data-i18n="audit.td22">Multi-part payments</td><td data-i18n="audit.td23" class="todo">absent</td><td data-i18n="audit.td24">A payment larger than any single channel's liquidity fails rather than splitting.</td></tr>
+        <tr><td data-i18n="audit.td22">Multi-part payments</td><td data-i18n="audit.td23" class="todo">implemented</td><td data-i18n="audit.td24">Payments split across several routes, bound together by the payment hash and the payment secret. The receiver <em>holds</em> each part and releases the preimage only when the total has arrived — releasing it early would hand over a full receipt for a partial payment. No adaptive splitting from failure history yet.</td></tr>
         <tr><td data-i18n="audit.td25">Wallet / HD keys</td><td data-i18n="audit.td26" class="done">implemented</td><td data-i18n="audit.td27">BIP-39 mnemonic with checksum, BIP-32 derivation, gap-limit discovery, coin selection and change handling. No encrypted keystore at rest.</td></tr>
-        <tr><td data-i18n="audit.td28">Quantum resistance</td><td data-i18n="audit.td29" class="todo">absent</td><td data-i18n="audit.td30">secp256k1 like everyone else. Bitcoin's own migration is a multi-year programme that has not properly started.</td></tr>
+        <tr><td data-i18n="audit.td28">Quantum resistance</td><td data-i18n="audit.td29" class="todo">partial</td><td data-i18n="audit.td30">There is a hash-based signature path (WOTS+, the primitive underneath SPHINCS+) as an optional address version — no public-key structure for Shor to attack. But the default path is still secp256k1, the signatures are 2144 bytes against 64, and the keys are <strong>one-time</strong>: signing twice leaks the key. Not a migration, an option.</td></tr>
       </tbody>
     </table>
   </div>

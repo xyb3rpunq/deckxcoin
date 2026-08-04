@@ -7,8 +7,8 @@
  *
  *   • per-hop confidentiality — hop *i* learns only its own instruction and
  *     the next hop's address; it cannot read anything beyond that;
- *   • constant packet size — the packet is the same 1366 bytes whether the
- *     route is one hop or twenty, so length reveals nothing about position;
+ *   • constant packet size — the packet is the same size whether the route is
+ *     one hop or twenty, so length reveals nothing about position;
  *   • integrity — each hop verifies an HMAC before forwarding, so a tampered
  *     packet fails at the first honest node rather than propagating.
  *
@@ -18,10 +18,26 @@
  * uses. The security argument is unchanged — both are PRFs keyed by the
  * per-hop shared secret.
  *
+ * ── Why the payload is 64 bytes and not 33 ────────────────────────────────
+ * It was 33, and the packet was 1366. Multi-part payments need two more fields
+ * at the final hop — the *total* the parts add up to, and the payment secret
+ * that proves the sender read the invoice — and 8 + 32 bytes do not fit in the
+ * 12 that were spare.
+ *
+ * They cannot be carried outside the onion: every forwarding node would then
+ * see the total and the secret, which is exactly the linkage the onion exists
+ * to prevent. And they cannot be carried only on the final slot, because every
+ * slot must be identical or the size of a packet would say how far along it is.
+ *
+ * So all twenty slots grew, and a payment costs 1986 bytes instead of 1366.
+ * That is the price of splitting a payment, and real Lightning pays it too —
+ * BOLT-04 moved from fixed 65-byte hops to variable TLV payloads for the same
+ * reason and at the same cost.
+ *
  * Fixed sizes:
- *   HOP_PAYLOAD 33 B  ‖  HMAC 32 B  →  HOP_SIZE 65 B
- *   MAX_HOPS 20        →  ROUTING_INFO 1300 B
- *   packet = version 1 + ephemeral 33 + routing 1300 + hmac 32 = 1366 B
+ *   HOP_PAYLOAD 64 B  ‖  HMAC 32 B  →  HOP_SIZE 96 B
+ *   MAX_HOPS 20        →  ROUTING_INFO 1920 B
+ *   packet = version 1 + ephemeral 33 + routing 1920 + hmac 32 = 1986 B
  */
 
 import {
@@ -42,13 +58,16 @@ import {
   type Hex,
 } from '../crypto.ts';
 
-export const HOP_PAYLOAD_SIZE = 33;
+export const HOP_PAYLOAD_SIZE = 64;
 export const HMAC_SIZE = 32;
-export const HOP_SIZE = HOP_PAYLOAD_SIZE + HMAC_SIZE; // 65
+export const HOP_SIZE = HOP_PAYLOAD_SIZE + HMAC_SIZE; // 96
 export const MAX_HOPS = 20;
-export const ROUTING_INFO_SIZE = MAX_HOPS * HOP_SIZE; // 1300
-export const PACKET_SIZE = 1 + 33 + ROUTING_INFO_SIZE + HMAC_SIZE; // 1366
+export const ROUTING_INFO_SIZE = MAX_HOPS * HOP_SIZE; // 1920
+export const PACKET_SIZE = 1 + 33 + ROUTING_INFO_SIZE + HMAC_SIZE; // 1986
 export const ONION_VERSION = 0;
+
+/** All-zero, meaning "this payment is not split". */
+export const NO_PAYMENT_SECRET: Hex = '0'.repeat(64);
 
 export interface HopPayload {
   /** Channel to forward over. Zero for the final hop. */
@@ -59,6 +78,24 @@ export interface HopPayload {
   readonly outgoingCltv: number;
   /** Set on the final hop only. */
   readonly final: boolean;
+  /**
+   * Final hop only: what every part of this payment adds up to.
+   *
+   * Equal to `amountToForward` for an ordinary single-part payment. Larger when
+   * the payment was split, which is how the receiver knows to wait rather than
+   * settle for what has arrived so far.
+   */
+  readonly totalAmount?: bigint;
+  /**
+   * Final hop only: the secret from the invoice.
+   *
+   * Proves the sender read the invoice rather than merely learning the payment
+   * hash by carrying it. Without this, any node that forwarded a payment knows
+   * the hash and can send its own "part" to the same destination — which lets
+   * it confirm it is one hop from the payee, and lets it interfere with a
+   * multi-part payment it was never party to.
+   */
+  readonly paymentSecret?: Hex;
 }
 
 export interface OnionPacket {
@@ -102,23 +139,49 @@ function mac(key: Uint8Array, data: Uint8Array, assoc: Uint8Array): Uint8Array {
 
 /* ------------------------------------------------------------ hop payloads */
 
+/**
+ * Layout, 64 bytes:
+ *
+ *   0      final flag                1 B
+ *   1..9   short channel id          8 B
+ *   9..17  amount to forward         8 B
+ *   17..21 outgoing CLTV             4 B
+ *   21..29 total amount              8 B    ─┐ meaningful on the final hop;
+ *   29..61 payment secret           32 B    ─┘ zero on every forwarding hop
+ *   61..64 reserved                  3 B
+ *
+ * The multi-part fields are written on every hop rather than only the last,
+ * because a slot whose contents depended on position would be a slot whose
+ * *encrypted* contents differ in a detectable way. They are simply zero
+ * everywhere but the end.
+ */
 export function encodeHopPayload(p: HopPayload): Uint8Array {
   return concat(
     Uint8Array.of(p.final ? 1 : 0),
     beBytes(p.shortChannelId, 8),
     beBytes(p.amountToForward, 8),
     beBytes(BigInt(p.outgoingCltv), 4),
-    new Uint8Array(12), // reserved — keeps the payload at a fixed 33 bytes
+    beBytes(p.totalAmount ?? 0n, 8),
+    fromHex(p.paymentSecret ?? NO_PAYMENT_SECRET),
+    new Uint8Array(3), // reserved — keeps the payload at a fixed 64 bytes
   );
 }
 
 export function decodeHopPayload(b: Uint8Array): HopPayload {
   if (b.length !== HOP_PAYLOAD_SIZE) throw new Error('decodeHopPayload: wrong size');
+  const final = b[0] === 1;
+  const totalAmount = beToBigInt(b.subarray(21, 29));
+  const paymentSecret = toHex(b.subarray(29, 61));
+
   return {
-    final: b[0] === 1,
+    final,
     shortChannelId: beToBigInt(b.subarray(1, 9)),
     amountToForward: beToBigInt(b.subarray(9, 17)),
     outgoingCltv: Number(beToBigInt(b.subarray(17, 21))),
+    // Reported only where they mean something. A forwarding node reading a
+    // total out of its own payload would be reading zeros and treating them
+    // as a claim.
+    ...(final ? { totalAmount, paymentSecret } : {}),
   };
 }
 

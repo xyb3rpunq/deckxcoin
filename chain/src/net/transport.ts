@@ -22,7 +22,7 @@
  *
  * ── Why the length is encrypted too ───────────────────────────────────────
  * A plaintext length field reveals message boundaries, and message sizes are a
- * fingerprint: a 1366-byte payload is an onion, a 24-byte one is a `verack`.
+ * fingerprint: a 1986-byte payload is an onion, a 24-byte one is a `verack`.
  * The length is therefore encrypted with a separate ChaCha20 keystream and
  * covered by the payload's AEAD tag as associated data, so it cannot be
  * tampered with either. This is BIP-324's design.
