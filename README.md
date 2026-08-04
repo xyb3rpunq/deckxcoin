@@ -8,7 +8,7 @@
 
 **Bitcoin's UTXO value layer · an Ethereum-style contract layer that holds no balance · a Lightning-style channel network**
 
-[![tests](https://img.shields.io/badge/tests-275%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![tests](https://img.shields.io/badge/tests-313%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
 [![node](https://img.shields.io/badge/full%20node-P2P%20%2B%20reorg%20%2B%20SQLite-38d9ff?style=flat-square&labelColor=0c0f18)](#-running-a-node)
 [![supply](https://img.shields.io/badge/supply-21%2C000%2C000%20DECKX-ff2d55?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![halving](https://img.shields.io/badge/halving-every%20365%20days-ffb020?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
@@ -187,6 +187,29 @@ node src/deckxd.ts --network testnet --datadir ./data/b --port 19334 --rpcport 1
 
 `deckxd` persists to SQLite, so a restarted node resumes at its tip instead of re-syncing.
 `SIGINT`/`SIGTERM` close the database cleanly.
+
+### A public node
+
+```bash
+sudo ./chain/scripts/deploy.sh --network testnet --gateway --faucet --mine dxc1q…
+```
+
+One command on a fresh Debian or Ubuntu box: unprivileged service user, hardened systemd unit,
+firewall opened for P2P and the gateway — and **not** for the RPC, which is unauthenticated by
+design and can mine, dial anywhere and stop the process. Run it with `--dry-run` first to see the
+plan and the exact unit file without touching the machine.
+
+Two extra surfaces come with it, both optional:
+
+| Flag | What it starts |
+|---|---|
+| `--gateway` | A read-only front end on 8080. Positive allowlist, response cache keyed by method *and* parameters, token bucket per client. This is the only port meant to face the internet. |
+| `--faucet` | A rate-limited dispenser at `/faucet`. Refuses to run on mainnet. Generates its wallet at `<datadir>/faucet.key` on first start and prints the address to fund. |
+
+The website's explorer reads a gateway when one is configured in
+[`web/data/network.json`](web/data/network.json), and falls back to the bundled snapshot when none
+answers — saying which of the two you are looking at, every time. See
+[docs/RUNNING-A-PUBLIC-TESTNET.md](docs/RUNNING-A-PUBLIC-TESTNET.md).
 
 ### Talking to it
 
@@ -403,8 +426,15 @@ test/compact.test.ts      11  salted short ids · reconstruction from a mempool 
                               announcements · bandwidth saving
 test/feerate.test.ts      18  percentile-not-mean estimation · thin history refused ·
                               RBF rules incl. the bloat and relay-cost defences
+test/faucet.test.ts       21  four limits, each closing the hole the last one leaves ·
+                              IPv6 limited by /64 · CONCURRENT REQUESTS THAT WOULD
+                              DOUBLE-SPEND · rollback when a broadcast fails ·
+                              draining to the reserve
+test/gateway.test.ts      17  a positive allowlist, not a denylist · every dangerous
+                              method refused · cache keyed by method AND params ·
+                              errors never cached · token bucket per client
                           ───
-                          275
+                          313
 ```
 
 **The test suite is the specification.** If a claim on the website or in this README is not backed by
@@ -458,11 +488,20 @@ chain/
 │  │  ├─ chainstate.ts  persistence · block index · REORG with undo
 │  │  ├─ mempool.ts     fee-rate pool · reorg-aware · dependency-ordered templates
 │  │  ├─ node.ts        sync · relay · orphans · mining
+│  │  ├─ feerate.ts     percentile fee estimation · BIP-125 replace-by-fee
+│  │  ├─ faucet.ts      four rate limits · serialised sends · persisted ledger
+│  │  ├─ gateway.ts     the public read-only front end — allowlist · cache · limits
 │  │  └─ rpc.ts         JSON-RPC over HTTP (21 methods)
 │  ├─ net/
 │  │  ├─ wire.ts        framing · checksums · message types
 │  │  ├─ peer.ts        one connection · handshake · ban scoring
+│  │  ├─ identity.ts    long-term keys · transcript signing · pinning
+│  │  ├─ compact.ts     BIP-152 compact block relay
+│  │  ├─ transport.ts   ECDH · ChaCha20-Poly1305 · encrypted lengths · rekeying
 │  │  └─ manager.ts     listener · dialler · address book · relay
+│  ├─ wallet/
+│  │  ├─ hd.ts          BIP-39 mnemonic · BIP-32 derivation · gap limit
+│  │  └─ wallet.ts      scanning · coin selection · change · dry-run validation
 │  └─ volt/
 │     ├─ secrets.ts     per-commitment hash chain · BOLT-03 revocation derivation
 │     ├─ channel.ts     commitments · HTLCs · penalties · closes
@@ -471,14 +510,21 @@ chain/
 │     ├─ invoice.ts     bech32m `lnvolt1…` signed payment requests
 │     ├─ network.ts     nodes · channel lifecycle · end-to-end routed payments
 │     └─ watchtower.ts  encrypted breach blobs the tower cannot read
-├─ test/              275 tests across 16 files
+├─ test/              313 tests across 18 files
 └─ scripts/
-   ├─ testnet.ts      launch a local multi-node network
-   └─ export-web-data.ts → web/data/chain.json
+   ├─ testnet.ts             launch a local multi-node network
+   ├─ deploy.sh              provision a public node on a fresh server
+   ├─ create-funded-wallet.ts
+   └─ export-web-data.ts  → web/data/chain.json
 web/                  the static site — plain HTML/CSS/JS, no build step
+├─ i18n.js            English inline, Indonesian fetched · clickable EN/ID switch
+├─ i18n/id.json       415 strings
+├─ live.js            reads a live gateway when one answers, snapshot when not
+└─ data/network.json  which gateways to try, and the genesis they must report
 docs/
 ├─ WHITEPAPER.md      + DeckxCoin-Whitepaper.pdf (13 pages)
 ├─ DESIGN.md          17 design decisions and their reasoning
+├─ RUNNING-A-PUBLIC-TESTNET.md  seed nodes · faucet · live explorer · what it costs
 └─ COMPLIANCE.md      regulatory positioning
 ```
 

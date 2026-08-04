@@ -112,6 +112,33 @@ main, .topbar, .footer { position: relative; z-index: 2; }
   border-radius: 6px; padding: 5px 11px; font-size: 15px; cursor: pointer;
 }
 
+/* ── language switch ──────────────────────────────────────────────── */
+
+.lang-switch {
+  display: flex; align-items: stretch; margin-left: 10px;
+  border: 1px solid var(--border-hi); border-radius: 6px; overflow: hidden;
+  flex-shrink: 0;
+}
+.lang-btn {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  background: transparent; border: 0; color: var(--dim);
+  padding: 6px 10px; cursor: pointer; transition: color .15s, background .15s;
+}
+.lang-btn + .lang-btn { border-left: 1px solid var(--border); }
+.lang-btn:hover:not(:disabled) { color: var(--text-hi); background: var(--panel-2); }
+.lang-btn.active { color: var(--bg); background: var(--acid); }
+/* Disabled only during the dictionary fetch. Fading it to invisible would read
+   as broken, so it dims just enough to say "not now". */
+.lang-btn:disabled { opacity: .55; cursor: progress; }
+.lang-switch[data-state="error"] { border-color: var(--rekt); }
+
+@media (max-width: 900px) {
+  /* Sits next to the hamburger rather than inside the collapsed menu: the
+     first thing a reader who cannot read the page needs is the switch, and
+     burying it behind a menu they cannot read is the wrong place for it. */
+  .lang-switch { margin-left: auto; margin-right: 8px; }
+}
+
 /* ── hero ─────────────────────────────────────────────────────────── */
 
 .hero { padding: 72px max(20px, calc((100vw - var(--maxw)) / 2)) 64px; }
@@ -621,3 +648,68 @@ details.block summary::-webkit-details-marker { display: none; }
   body { background: #fff; color: #000; }
   .section, .card, .terminal, table.spec { border-color: #ccc; }
 }
+
+/* ── live status banner ───────────────────────────────────────────── */
+
+.live-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 14px; padding: 9px 13px;
+  border: 1px solid var(--border-hi); border-radius: var(--radius);
+  background: var(--panel); font-family: var(--mono); font-size: 12px;
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  background: var(--dimmer);
+}
+.live-label { letter-spacing: 0.14em; color: var(--dim); }
+.live-detail { color: var(--dimmer); }
+
+/* Live is the only state that pulses. A snapshot that animated would be
+   claiming motion it does not have, which is the exact confusion the banner
+   exists to prevent. */
+.live-banner[data-status="live"] { border-color: var(--acid); }
+.live-banner[data-status="live"] .live-dot {
+  background: var(--acid); animation: live-pulse 2s ease-in-out infinite;
+}
+.live-banner[data-status="live"] .live-label { color: var(--acid); }
+
+.live-banner[data-status="connecting"] .live-dot { background: var(--amber); }
+.live-banner[data-status="connecting"] .live-label { color: var(--amber); }
+
+.live-banner[data-status="unreachable"] { border-color: var(--amber); }
+.live-banner[data-status="unreachable"] .live-dot,
+.live-banner[data-status="unreachable"] .live-label { color: var(--amber); background-color: transparent; }
+.live-banner[data-status="unreachable"] .live-dot { background: var(--amber); }
+
+.live-banner[data-status="mismatch"] { border-color: var(--rekt); }
+.live-banner[data-status="mismatch"] .live-dot { background: var(--rekt); }
+.live-banner[data-status="mismatch"] .live-label { color: var(--rekt); }
+
+@keyframes live-pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.35 } }
+
+@media (prefers-reduced-motion: reduce) {
+  .live-banner[data-status="live"] .live-dot { animation: none; }
+}
+
+/* ── faucet panel ─────────────────────────────────────────────────── */
+
+.faucet-panel {
+  margin: 22px 0; padding: 18px 20px;
+  border: 1px solid var(--border-hi); border-radius: var(--radius);
+  background: var(--panel);
+}
+.faucet-panel h3 { margin: 0 0 4px; font-size: 15px; color: var(--text-hi); }
+.faucet-sub { margin: 0 0 14px; font-size: 13px; color: var(--dim); }
+.faucet-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.faucet-input {
+  flex: 1 1 260px; min-width: 0;
+  font-family: var(--mono); font-size: 13px;
+  padding: 9px 12px; border-radius: 6px;
+  border: 1px solid var(--border-hi); background: var(--bg); color: var(--text);
+}
+.faucet-input:focus-visible { outline: 2px solid var(--acid); outline-offset: 1px; }
+.faucet-btn { flex: 0 0 auto; }
+.faucet-btn:disabled { opacity: .6; cursor: progress; }
+.faucet-result { margin: 12px 0 0; font-family: var(--mono); font-size: 12.5px; color: var(--dim); }
+.faucet-result[data-tone="good"] { color: var(--acid); }
+.faucet-result[data-tone="bad"] { color: var(--rekt); }

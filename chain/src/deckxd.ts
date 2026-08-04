@@ -21,13 +21,18 @@
  * cleanly — killing a node mid-write is the one way to corrupt its datadir.
  */
 
-import { resolve } from 'node:path';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 
 import { DeckxNode } from './node/node.ts';
 import { RpcServer } from './node/rpc.ts';
+import { Gateway } from './node/gateway.ts';
+import { Faucet, FaucetLedger, DEFAULT_POLICY } from './node/faucet.ts';
+import { HdWallet, generateMnemonic } from './wallet/hd.ts';
+import { Wallet } from './wallet/wallet.ts';
 import { networkByName } from './params.ts';
 import { isValidAddress } from './crypto.ts';
-import { formatDeckx } from './tx.ts';
+import { formatDeckx, ZAPS_PER_DECKX } from './tx.ts';
 
 interface Args {
   readonly flags: Map<string, string[]>;
@@ -99,6 +104,84 @@ async function main(): Promise<number> {
 
   const rpc = new RpcServer({ node, port: rpcPort });
 
+  /* ── faucet ──────────────────────────────────────────────────────── */
+
+  let faucet: Faucet | undefined;
+  let faucetPath: string | undefined;
+
+  if (args.has('faucet')) {
+    if (params.name === 'mainnet') {
+      console.error(red('--faucet refuses to run on mainnet: it gives coins to anyone who asks'));
+      return 2;
+    }
+
+    faucetPath = resolve(args.one('faucet-wallet', `${datadir}/faucet.key`)!);
+    const ledgerPath = `${faucetPath}.ledger.json`;
+    const mnemonic = loadOrCreateMnemonic(faucetPath);
+
+    const wallet = new Wallet({ hd: HdWallet.fromMnemonic(mnemonic) });
+    const ledger = existsSync(ledgerPath)
+      ? FaucetLedger.fromJSON(JSON.parse(readFileSync(ledgerPath, 'utf8')))
+      : new FaucetLedger();
+
+    const deckx = (name: string, fallback: bigint): bigint => {
+      const raw = args.one(name);
+      if (raw === undefined) return fallback;
+      const value = Number(raw);
+      if (!Number.isFinite(value) || value < 0) throw new Error(`--${name} must be a number of DECKX`);
+      return BigInt(Math.round(value * Number(ZAPS_PER_DECKX)));
+    };
+
+    faucet = new Faucet({
+      wallet,
+      chain: () => ({
+        state: node.chain.state,
+        height: node.chain.height,
+        // The persistent node's chain is a ChainState, which stores headers
+        // rather than whole blocks — the tip's timestamp comes from the header
+        // index, not from a Block object.
+        time: node.chain.headerAt(node.chain.height)?.time ?? Math.floor(Date.now() / 1000),
+      }),
+      broadcast: (tx) => {
+        const result = node.submitTransaction(tx);
+        if (!result.ok) return { ok: false, error: result.error };
+        node.relayTransaction(tx);
+        return { ok: true };
+      },
+      policy: {
+        amount: deckx('faucet-amount', DEFAULT_POLICY.amount),
+        reserve: deckx('faucet-reserve', DEFAULT_POLICY.reserve),
+        dailyCap: deckx('faucet-daily-cap', DEFAULT_POLICY.dailyCap),
+        addressCooldownMs: args.number('faucet-cooldown', 60) * 60_000,
+      },
+      ledger,
+      // Persisted on every grant. A faucet that forgets on restart is one you
+      // drain by crashing it.
+      onChange: (l) => {
+        try {
+          writeFileSync(ledgerPath, JSON.stringify(l.toJSON()), { mode: 0o600 });
+        } catch (err) {
+          console.error(`${stamp()} ${red('faucet')}    could not persist ledger: ${(err as Error).message}`);
+        }
+      },
+    });
+  }
+
+  /* ── public gateway ──────────────────────────────────────────────── */
+
+  let gateway: Gateway | undefined;
+  if (args.has('gateway') || args.has('gateway-port')) {
+    gateway = new Gateway({
+      // No HTTP hop: the gateway calls the RPC dispatcher directly, so the
+      // node's own port stays on loopback where it belongs.
+      call: async (method, callParams) => rpc.call(method, callParams),
+      port: args.number('gateway-port', 8080),
+      host: args.one('gateway-host', '0.0.0.0'),
+      ratePerMinute: args.number('gateway-rate', 60),
+      faucet,
+    });
+  }
+
   /* ── logging ─────────────────────────────────────────────────────── */
 
   node.on('peerReady', (peer) => {
@@ -124,17 +207,39 @@ async function main(): Promise<number> {
 
   await node.start();
   await rpc.start();
+  if (gateway) await gateway.start();
 
   console.log(bold(`\ndeckxd — ${params.name}\n`));
   const row = (k: string, v: string) => console.log(`  ${dim(k.padEnd(12))} ${v}`);
   row('datadir', datadir);
   row('p2p', `${args.one('host', '127.0.0.1')}:${port}`);
   row('rpc', `http://127.0.0.1:${rpcPort}`);
+  if (gateway) row('gateway', `http://${gateway.host}:${gateway.port}`);
   row('genesis', node.chain.headerAt(0)!.hash);
   row('height', String(node.chain.height));
   row('supply', formatDeckx(node.chain.auditSupply().utxoTotal));
   if (mineTo) row('mining to', mineTo);
+  if (faucet) {
+    const info = faucet.info();
+    row('faucet', `${info.address} ${dim(`(${info.balancePretty})`)}`);
+    row('faucet key', faucetPath!);
+    if (!info.healthy) {
+      console.log(
+        `\n  ${red('the faucet is empty')} — mine to its address, or fund it from another wallet:\n` +
+          `  ${dim(`--mine ${info.address}`)}`,
+      );
+    }
+  }
   console.log();
+
+  /*
+   * The identity is what a newcomer pins to detect an interposed peer. It is
+   * only useful if the operator publishes it, so it is printed where they will
+   * see it rather than buried in a datadir.
+   */
+  if (args.one('host', '127.0.0.1') !== '127.0.0.1') {
+    console.log(`  ${dim('publish this:')} ${bold(`<your-host>:${port}#${node.identity.address}`)}\n`);
+  }
 
   /* ── mining ──────────────────────────────────────────────────────── */
 
@@ -178,6 +283,7 @@ async function main(): Promise<number> {
     console.log(`\n${stamp()} ${dim(signal)} — closing`);
     if (miner) clearInterval(miner);
     if (status) clearInterval(status);
+    if (gateway) await gateway.stop();
     await rpc.stop();
     await node.stop();
     process.exit(0);
@@ -189,6 +295,34 @@ async function main(): Promise<number> {
   // this interval is the single thing keeping the node alive.
   await new Promise(() => {});
   return 0;
+}
+
+/**
+ * Read the faucet's mnemonic, creating one on first run.
+ *
+ * Written with mode 0600 and never logged. The address derived from it *is*
+ * printed, because an operator has to know where to send the coins that fill
+ * the faucet, and an address is public by nature.
+ */
+function loadOrCreateMnemonic(path: string): string {
+  if (existsSync(path)) {
+    const mnemonic = readFileSync(path, 'utf8').trim();
+    if (!mnemonic) throw new Error(`faucet key file ${path} is empty`);
+    return mnemonic;
+  }
+
+  mkdirSync(dirname(path), { recursive: true });
+  const mnemonic = generateMnemonic();
+  // Written 0600 from the start rather than created and then tightened: the
+  // window between the two is a window in which the words are world-readable.
+  writeFileSync(path, `${mnemonic}\n`, { mode: 0o600 });
+  try {
+    chmodSync(path, 0o600);
+  } catch {
+    // Windows has no POSIX mode. The file is still in the datadir.
+  }
+  console.log(`${stamp()} ${bold('faucet')}    generated a new wallet at ${path}`);
+  return mnemonic;
 }
 
 const HELP = `
@@ -205,6 +339,30 @@ deckxd — the DeckxCoin node daemon
   --no-listen            outbound connections only
   --quiet                suppress the periodic status line
   --help                 this text
+
+Public gateway — the only port meant to face the internet. Read-only,
+cached and rate-limited; the RPC above stays on loopback.
+
+  --gateway              enable it
+  --gateway-port <n>     listen port                      (default 8080)
+  --gateway-host <addr>  bind address                     (default 0.0.0.0)
+  --gateway-rate <n>     requests per minute per client   (default 60)
+
+Faucet — refuses to run on mainnet.
+
+  --faucet               enable it
+  --faucet-wallet <path> mnemonic file, created if absent (default <datadir>/faucet.key)
+  --faucet-amount <n>    DECKX per grant                  (default 10)
+  --faucet-reserve <n>   DECKX kept back                  (default 100)
+  --faucet-daily-cap <n> DECKX per rolling 24 hours       (default 5000)
+  --faucet-cooldown <m>  minutes between grants per address (default 60)
+
+Example — a public seed node with a gateway and a faucet:
+
+  node src/deckxd.ts --network testnet --datadir /var/lib/deckxd \\
+       --host 0.0.0.0 --port 19333 \\
+       --gateway --gateway-port 8080 \\
+       --faucet --faucet-amount 10 --mine dxc1q...
 
 Example — a two-node local testnet:
 

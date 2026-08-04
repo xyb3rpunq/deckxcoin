@@ -32,8 +32,19 @@ identity-*
 **/identity
 keystore/
 secrets/
-data/
+# Node datadirs — chain databases, identity keys, faucet wallets and ledgers.
+# Anchored with a leading slash and scoped to chain/, because a bare `data/`
+# also swallowed web/data/, which is published site content. That went
+# unnoticed for a while: web/data/chain.json was already tracked, and git does
+# not re-ignore a tracked file — so only the *next* file added there would have
+# gone silently missing from the deploy.
+/data/
 chain/data/
+chain/**/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.ledger.json
 *-export.txt
 *-export.json
 DECKXCOIN-WALLET-*

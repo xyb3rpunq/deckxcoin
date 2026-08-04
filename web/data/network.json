@@ -1,0 +1,28 @@
+{
+  "_comment": [
+    "Public gateways the explorer will try, in order. The first one that answers",
+    "and reports the expected genesis hash wins.",
+    "",
+    "This list is empty because no public DeckxCoin node is running yet. Listing",
+    "hosts that do not exist would make the page claim a network it does not have.",
+    "",
+    "expectedGenesis: the genesis hash a gateway must report to be accepted. Set",
+    "it to the genesis of the network you are actually running. Leave it null and",
+    "the check falls back to the genesis in data/chain.json — which is the",
+    "mainnet-parameter scenario chain, NOT a testnet, so a testnet gateway would",
+    "be refused. Print yours with:",
+    "  node src/cli.ts genesis --network testnet",
+    "",
+    "To point the page at your own node without editing this file:",
+    "  ?node=http://your-host:8080&genesis=<hash>",
+    "",
+    "To run the gateway a URL here would point at:",
+    "  node src/deckxd.ts --network testnet --datadir /var/lib/deckxd \\",
+    "       --host 0.0.0.0 --gateway --gateway-port 8080 --faucet",
+    "",
+    "See docs/RUNNING-A-PUBLIC-TESTNET.md."
+  ],
+  "gateways": [],
+  "expectedGenesis": null,
+  "pollMs": 15000
+}

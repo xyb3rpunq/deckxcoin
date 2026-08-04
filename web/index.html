@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckxCoin — REKT protocol · Bitcoin UTXO + Ethereum contracts + Volt channels</title>
-<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 275 passing tests.">
+<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 313 passing tests.">
 <meta name="theme-color" content="#05060a">
 <meta property="og:title" content="DeckxCoin — REKT protocol">
 <meta property="og:description" content="Bitcoin's UTXO layer, Ethereum's contract layer, Lightning's channel layer. One chain. Mined genesis, not hardcoded.">
@@ -23,18 +23,18 @@
     <span class="brand-name">DECKX<span class="accent">COIN</span></span>
   </a>
   <nav class="topnav">
-    <a href="#thesis">Thesis</a>
-    <a href="#bitcoin">Bitcoin</a>
-    <a href="#ethereum">Ethereum</a>
-    <a href="#fusion">Fusion</a>
-    <a href="#supply">Supply</a>
-    <a href="#contracts">Contracts</a>
-    <a href="#volt">Volt</a>
-    <a href="#network">Node</a>
-    <a href="#wallet">Wallet</a>
-    <a href="#explorer">Explorer</a>
-    <a class="ghost" href="DeckxCoin-Whitepaper.pdf">Whitepaper ↓</a>
-    <a class="ghost" href="https://github.com/xyb3rpunq/deckxcoin" rel="noopener">GitHub ↗</a>
+    <a data-i18n="nav.a1" href="#thesis">Thesis</a>
+    <a data-i18n="nav.a2" href="#bitcoin">Bitcoin</a>
+    <a data-i18n="nav.a3" href="#ethereum">Ethereum</a>
+    <a data-i18n="nav.a4" href="#fusion">Fusion</a>
+    <a data-i18n="nav.a5" href="#supply">Supply</a>
+    <a data-i18n="nav.a6" href="#contracts">Contracts</a>
+    <a data-i18n="nav.a7" href="#volt">Volt</a>
+    <a data-i18n="nav.a8" href="#network">Node</a>
+    <a data-i18n="nav.a9" href="#wallet">Wallet</a>
+    <a data-i18n="nav.a10" href="#explorer">Explorer</a>
+    <a data-i18n="nav.a11" class="ghost" href="DeckxCoin-Whitepaper.pdf">Whitepaper ↓</a>
+    <a data-i18n="nav.a12" class="ghost" href="https://github.com/xyb3rpunq/deckxcoin" rel="noopener">GitHub ↗</a>
   </nav>
   <button class="menu-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
 </header>
@@ -44,26 +44,26 @@
 <!-- ═══════════════════════════════════════════════════ HERO ══ -->
 <section class="hero">
   <div class="hero-inner">
-    <p class="kicker">Decky Decentralized Coin Exchange · reference implementation · v0.1.0</p>
+    <p data-i18n="header.p1" class="kicker">Decky Decentralized Coin Exchange · reference implementation · v0.1.0</p>
     <h1 class="glitch" data-text="REKT">REKT</h1>
-    <p class="lede">
+    <p data-i18n="header.p2" class="lede">
       Every chain you have been rugged by started with a whitepaper you did not read.
       This one ships <strong>the whitepaper, the chain, and the tests together</strong> — a genesis
-      block that was <strong>mined, not hard-coded</strong>, 275 tests that fail loudly when the
+      block that was <strong>mined, not hard-coded</strong>, 313 tests that fail loudly when the
       cryptography is wrong, and source that carries its reasoning inline.
     </p>
 
     <div class="hero-stats" id="hero-stats">
       <div class="stat"><span class="stat-label">genesis hash</span><span class="stat-value mono" data-bind="genesis.hash.short">—</span></div>
       <div class="stat"><span class="stat-label">proof of work</span><span class="stat-value mono" data-bind="genesis.attempts">—</span></div>
-      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">275 / 275</span></div>
+      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">313 / 313</span></div>
       <div class="stat"><span class="stat-label">supply audit</span><span class="stat-value mono ok" data-bind="supply.status">—</span></div>
     </div>
 
     <div class="hero-cta">
-      <a class="btn primary" href="DeckxCoin-Whitepaper.pdf">Read the whitepaper (PDF)</a>
-      <a class="btn" href="#explorer">Open the block explorer</a>
-      <a class="btn" href="#run">Run it yourself</a>
+      <a data-i18n="cta.a1" class="btn primary" href="DeckxCoin-Whitepaper.pdf">Read the whitepaper (PDF)</a>
+      <a data-i18n="cta.a2" class="btn" href="#explorer">Open the block explorer</a>
+      <a data-i18n="cta.a3" class="btn" href="#run">Run it yourself</a>
     </div>
 
     <div class="terminal" role="img" aria-label="Terminal output of the genesis block">
@@ -77,12 +77,12 @@
 <section id="thesis" class="section">
   <div class="section-head">
     <span class="section-index">01</span>
-    <h2>The thesis</h2>
-    <p class="section-sub">Two whitepapers, one chain, and the specific reason nobody merged them properly before.</p>
+    <h2 data-i18n="thesis.h21">The thesis</h2>
+    <p data-i18n="thesis.p1" class="section-sub">Two whitepapers, one chain, and the specific reason nobody merged them properly before.</p>
   </div>
 
   <div class="prose">
-    <p>
+    <p data-i18n="thesis.p2">
       Bitcoin (Nakamoto, 2008) solved <em>ordering without identity</em>. Ethereum (Buterin, 2013;
       Wood, 2014) solved <em>arbitrary state transition</em>. Both solutions are correct. The
       combination is where things have historically gone wrong, and the failure is always the
@@ -91,14 +91,14 @@
       channels awkward, or (b) keeping UTXOs and letting contracts <em>custody value</em>, which
       recreates the single-pot honeypot that every large Ethereum exploit has drained.
     </p>
-    <p>
+    <p data-i18n="thesis.p3">
       DeckxCoin takes a third route. <strong>Contracts never hold money.</strong> There is no balance
       field on a contract account — look at <code>ContractAccount</code> in <code>src/state.ts</code>
       and you will not find one. Value sent to a contract address stays an ordinary UTXO. The only
       difference is what unlocks it: not a signature, but the contract answering
       <em>"may this specific spend proceed?"</em>
     </p>
-    <blockquote>
+    <blockquote data-i18n="thesis.blockquote1">
       There is no pot to drain — only individual outputs whose release a contract may approve or
       refuse. Reentrancy is not mitigated here; it is <em>absent</em>, because there is no
       cross-contract call opcode and nothing for a callback to re-enter.
@@ -107,19 +107,19 @@
 
   <div class="cards three">
     <article class="card">
-      <h3><span class="card-num">₿</span> Value layer</h3>
-      <p>UTXO set, proof-of-work, 21 M cap, 10-minute spacing, 2016-block retarget, 100-block coinbase maturity. Unmodified Bitcoin economics.</p>
-      <p class="card-meta">whitepaper §§ 2–8, 11</p>
+      <h3 data-i18n="thesis.h31"><span class="card-num">₿</span> Value layer</h3>
+      <p data-i18n="thesis.p4">UTXO set, proof-of-work, 21 M cap, 10-minute spacing, 2016-block retarget, 100-block coinbase maturity. Unmodified Bitcoin economics.</p>
+      <p data-i18n="thesis.p5" class="card-meta">whitepaper §§ 2–8, 11</p>
     </article>
     <article class="card">
-      <h3><span class="card-num">Ξ</span> State layer</h3>
-      <p>A 256-bit stack VM with persistent storage, metered gas, reverts, logs, and a state root committed in every block header.</p>
-      <p class="card-meta">EVM-shaped, deliberately smaller</p>
+      <h3 data-i18n="thesis.h32"><span class="card-num">Ξ</span> State layer</h3>
+      <p data-i18n="thesis.p6">A 256-bit stack VM with persistent storage, metered gas, reverts, logs, and a state root committed in every block header.</p>
+      <p data-i18n="thesis.p7" class="card-meta">EVM-shaped, deliberately smaller</p>
     </article>
     <article class="card">
-      <h3><span class="card-num">⚡</span> Speed layer</h3>
-      <p>Volt: 2-of-2 channels, revocation penalties, HTLCs, Sphinx onion routing, signed invoices. Payments settle in milliseconds, on-chain footprint of two transactions.</p>
-      <p class="card-meta">Poon–Dryja, BOLT 2/3/4/11</p>
+      <h3 data-i18n="thesis.h33"><span class="card-num">⚡</span> Speed layer</h3>
+      <p data-i18n="thesis.p8">Volt: 2-of-2 channels, revocation penalties, HTLCs, Sphinx onion routing, signed invoices. Payments settle in milliseconds, on-chain footprint of two transactions.</p>
+      <p data-i18n="thesis.p9" class="card-meta">Poon–Dryja, BOLT 2/3/4/11</p>
     </article>
   </div>
 </section>
@@ -128,68 +128,68 @@
 <section id="bitcoin" class="section alt">
   <div class="section-head">
     <span class="section-index">02</span>
-    <h2>What we kept from the Bitcoin whitepaper</h2>
-    <p class="section-sub">Nine pages, twelve sections, 2008. Section by section, what DeckxCoin implements and where it deviates.</p>
+    <h2 data-i18n="bitcoin.h21">What we kept from the Bitcoin whitepaper</h2>
+    <p data-i18n="bitcoin.p1" class="section-sub">Nine pages, twelve sections, 2008. Section by section, what DeckxCoin implements and where it deviates.</p>
   </div>
 
   <div class="table-wrap">
     <table class="spec">
       <thead>
-        <tr><th>§</th><th>Whitepaper claim</th><th>DeckxCoin</th><th>Where</th></tr>
+        <tr><th>§</th><th data-i18n="bitcoin.th1">Whitepaper claim</th><th>DeckxCoin</th><th data-i18n="bitcoin.th3">Where</th></tr>
       </thead>
       <tbody>
         <tr>
           <td>2</td>
-          <td>A coin is a chain of digital signatures; each owner signs a hash of the previous transaction and the next owner's public key.</td>
-          <td class="keep">Kept in shape, upgraded in scheme: <strong>BIP-340 Schnorr</strong> rather than ECDSA. One signature per input; the digest commits to the prevout's value and address.</td>
-          <td><code>src/tx.ts</code> · <code>sighash()</code></td>
+          <td data-i18n="bitcoin.td1">A coin is a chain of digital signatures; each owner signs a hash of the previous transaction and the next owner's public key.</td>
+          <td data-i18n="bitcoin.td2" class="keep">Kept in shape, upgraded in scheme: <strong>BIP-340 Schnorr</strong> rather than ECDSA. One signature per input; the digest commits to the prevout's value and address.</td>
+          <td data-i18n="bitcoin.td3"><code>src/tx.ts</code> · <code>sighash()</code></td>
         </tr>
         <tr>
           <td>3</td>
-          <td>Timestamp server: hash a block of items, publish the hash, each timestamp includes the previous one.</td>
-          <td class="keep">Kept. Header commits <code>prevHash</code>; blocks must exceed the median time of the last 11.</td>
+          <td data-i18n="bitcoin.td4">Timestamp server: hash a block of items, publish the hash, each timestamp includes the previous one.</td>
+          <td data-i18n="bitcoin.td5" class="keep">Kept. Header commits <code>prevHash</code>; blocks must exceed the median time of the last 11.</td>
           <td><code>src/block.ts</code></td>
         </tr>
         <tr>
           <td>4</td>
-          <td>Proof-of-work: scan for a nonce such that the hash begins with the required zero bits. One-CPU-one-vote.</td>
-          <td class="keep">Kept. Double-SHA256 over an 88-byte header, Bitcoin's compact nBits target encoding.</td>
-          <td><code>src/block.ts</code> · <code>mine()</code></td>
+          <td data-i18n="bitcoin.td7">Proof-of-work: scan for a nonce such that the hash begins with the required zero bits. One-CPU-one-vote.</td>
+          <td data-i18n="bitcoin.td8" class="keep">Kept. Double-SHA256 over an 88-byte header, Bitcoin's compact nBits target encoding.</td>
+          <td data-i18n="bitcoin.td9"><code>src/block.ts</code> · <code>mine()</code></td>
         </tr>
         <tr>
           <td>5</td>
-          <td>Nodes accept the longest chain and keep working on extending it.</td>
-          <td class="change">Changed to <strong>most accumulated work</strong>, not most blocks. The distinction matters the instant difficulty varies.</td>
-          <td><code>src/chain.ts</code> · <code>chainWork</code></td>
+          <td data-i18n="bitcoin.td10">Nodes accept the longest chain and keep working on extending it.</td>
+          <td data-i18n="bitcoin.td11" class="change">Changed to <strong>most accumulated work</strong>, not most blocks. The distinction matters the instant difficulty varies.</td>
+          <td data-i18n="bitcoin.td12"><code>src/chain.ts</code> · <code>chainWork</code></td>
         </tr>
         <tr>
           <td>7</td>
-          <td>Reclaiming disk space: transactions hashed in a Merkle tree, only the root in the header.</td>
-          <td class="keep">Kept, <em>plus</em> an explicit guard against CVE-2012-2459 — the duplicate-trailing-leaf malleability bug that let two distinct blocks share a root.</td>
+          <td data-i18n="bitcoin.td13">Reclaiming disk space: transactions hashed in a Merkle tree, only the root in the header.</td>
+          <td data-i18n="bitcoin.td14" class="keep">Kept, <em>plus</em> an explicit guard against CVE-2012-2459 — the duplicate-trailing-leaf malleability bug that let two distinct blocks share a root.</td>
           <td><code>src/merkle.ts</code></td>
         </tr>
         <tr>
           <td>8</td>
-          <td>Simplified payment verification: a light client keeps headers and requests a Merkle branch.</td>
-          <td class="keep">Kept. <code>merkleProof()</code> / <code>verifyMerkleProof()</code>, tested at every tree size from 1 to 17 leaves.</td>
+          <td data-i18n="bitcoin.td16">Simplified payment verification: a light client keeps headers and requests a Merkle branch.</td>
+          <td data-i18n="bitcoin.td17" class="keep">Kept. <code>merkleProof()</code> / <code>verifyMerkleProof()</code>, tested at every tree size from 1 to 17 leaves.</td>
           <td><code>src/merkle.ts</code></td>
         </tr>
         <tr>
           <td>9</td>
-          <td>Combining and splitting value: inputs and outputs, with change.</td>
-          <td class="keep">Kept. Multi-input, multi-output, fee = inputs − outputs.</td>
-          <td><code>src/tx.ts</code> · <code>checkTx()</code></td>
+          <td data-i18n="bitcoin.td19">Combining and splitting value: inputs and outputs, with change.</td>
+          <td data-i18n="bitcoin.td20" class="keep">Kept. Multi-input, multi-output, fee = inputs − outputs.</td>
+          <td data-i18n="bitcoin.td21"><code>src/tx.ts</code> · <code>checkTx()</code></td>
         </tr>
         <tr>
           <td>10</td>
-          <td>Privacy: keep public keys anonymous, use a new key pair per transaction.</td>
-          <td class="change">Partially. Addresses are bech32m HASH160 commitments, and the pubkey is <em>witness data</em> excluded from the txid — but there is no HD wallet in v0.1, so key reuse is on you.</td>
+          <td data-i18n="bitcoin.td22">Privacy: keep public keys anonymous, use a new key pair per transaction.</td>
+          <td data-i18n="bitcoin.td23" class="change">Partially. Addresses are bech32m HASH160 commitments, and the pubkey is <em>witness data</em> excluded from the txid — and the HD wallet derives a fresh address per payment with change going to a branch it owns.</td>
           <td><code>src/crypto.ts</code></td>
         </tr>
         <tr>
           <td>11</td>
-          <td>Calculations: an attacker's catch-up probability falls exponentially with confirmations.</td>
-          <td class="keep">Kept as an economic property of the PoW parameters; not re-derived in code.</td>
+          <td data-i18n="bitcoin.td25">Calculations: an attacker's catch-up probability falls exponentially with confirmations.</td>
+          <td data-i18n="bitcoin.td26" class="keep">Kept as an economic property of the PoW parameters; not re-derived in code.</td>
           <td>—</td>
         </tr>
       </tbody>
@@ -197,28 +197,28 @@
   </div>
 
   <div class="callout">
-    <h4>Where Bitcoin actually stands in 2026 — and why this matters here</h4>
-    <p>
+    <h4 data-i18n="bitcoin.h41">Where Bitcoin actually stands in 2026 — and why this matters here</h4>
+    <p data-i18n="bitcoin.p2">
       Bitcoin's last consensus change was <strong>Taproot, November 2021</strong>. That is the longest
       quiet stretch in its history. The 2026 debate is about <em>covenants</em> — letting an output
       constrain how it may be spent:
     </p>
     <ul class="tight">
-      <li><strong>BIP-119 (OP_CHECKTEMPLATEVERIFY)</strong> — deployment parameters propose a start of
+      <li data-i18n="bitcoin.li1"><strong>BIP-119 (OP_CHECKTEMPLATEVERIFY)</strong> — deployment parameters propose a start of
         30 Mar 2026 and a minimum activation height in May 2027, with a 90 % miner-signalling
         threshold. Signalling has been effectively zero, so this attempt is unlikely to activate.</li>
-      <li><strong>BIP-348 (OP_CHECKSIGFROMSTACK)</strong> — CTV + CSFS has emerged as the frontrunner
+      <li data-i18n="bitcoin.li2"><strong>BIP-348 (OP_CHECKSIGFROMSTACK)</strong> — CTV + CSFS has emerged as the frontrunner
         pairing among core developers for a next soft fork.</li>
-      <li><strong>BIP-347 (OP_CAT)</strong> — specification reached "Complete" status on 1 Mar 2026 and
+      <li data-i18n="bitcoin.li3"><strong>BIP-347 (OP_CAT)</strong> — specification reached "Complete" status on 1 Mar 2026 and
         has ~74 000 test transactions on Bitcoin Inquisition's signet, but remains contested.</li>
     </ul>
-    <p>
+    <p data-i18n="bitcoin.p3">
       The honest summary: none of these is likely to change Bitcoin during 2026. DeckxCoin's
       covenant model is what those proposals are <em>trying to reach</em> — it just gets there by
       designing the rule in from genesis rather than retrofitting it under a soft fork's
       backwards-compatibility constraints.
     </p>
-    <p class="sources">
+    <p data-i18n="bitcoin.p4" class="sources">
       Sources:
       <a href="https://bitcoinops.org/en/topics/covenants/" rel="noopener">Bitcoin Optech — Covenants</a> ·
       <a href="https://www.spark.money/tools/bitcoin-covenant-proposals-compared" rel="noopener">Spark — CTV / APO / OP_CAT compared</a> ·
@@ -231,67 +231,67 @@
 <section id="ethereum" class="section">
   <div class="section-head">
     <span class="section-index">03</span>
-    <h2>What we took from Ethereum — and what we refused</h2>
-    <p class="section-sub">A contract VM is a liability surface. Every feature below was a decision, not a default.</p>
+    <h2 data-i18n="ethereum.h21">What we took from Ethereum — and what we refused</h2>
+    <p data-i18n="ethereum.p1" class="section-sub">A contract VM is a liability surface. Every feature below was a decision, not a default.</p>
   </div>
 
   <div class="split">
     <div class="split-col">
-      <h3 class="col-title keep-title">Kept</h3>
+      <h3 data-i18n="ethereum.h31" class="col-title keep-title">Kept</h3>
       <dl class="deflist">
-        <dt>256-bit words</dt>
-        <dd>Not because 256 bits is a sensible machine word — it isn't — but because a hash digest becomes a single stack item, and every meaningful contract manipulates digests.</dd>
-        <dt>Gas metering</dt>
-        <dd>Charged <em>before</em> each opcode, so out-of-gas can never leave a half-applied write. Out-of-gas still consumes the full limit; that is what makes spam expensive.</dd>
-        <dt>Persistent storage + state root</dt>
-        <dd>Every block header commits a <code>stateRoot</code> over the whole world state, so a light client can be handed a storage value and verify it.</dd>
-        <dt>REVERT semantics</dt>
-        <dd>All writes discarded, gas already spent stays spent.</dd>
-        <dt>EIP-170 code size limit</dt>
-        <dd>24 576 bytes. Same reasoning: bound worst-case validation cost.</dd>
-        <dt>EIP-3529 refund cap</dt>
-        <dd>Storage-clearing refunds capped at 20 % of gas used, so refunds can never be farmed into gas tokens.</dd>
-        <dt>CREATE-style addresses</dt>
-        <dd>Deterministic from <code>(deployer, nonce)</code>, so a deployer knows the address before mining.</dd>
+        <dt data-i18n="ethereum.dt1">256-bit words</dt>
+        <dd data-i18n="ethereum.dd1">Not because 256 bits is a sensible machine word — it isn't — but because a hash digest becomes a single stack item, and every meaningful contract manipulates digests.</dd>
+        <dt data-i18n="ethereum.dt2">Gas metering</dt>
+        <dd data-i18n="ethereum.dd2">Charged <em>before</em> each opcode, so out-of-gas can never leave a half-applied write. Out-of-gas still consumes the full limit; that is what makes spam expensive.</dd>
+        <dt data-i18n="ethereum.dt3">Persistent storage + state root</dt>
+        <dd data-i18n="ethereum.dd3">Every block header commits a <code>stateRoot</code> over the whole world state, so a light client can be handed a storage value and verify it.</dd>
+        <dt data-i18n="ethereum.dt4">REVERT semantics</dt>
+        <dd data-i18n="ethereum.dd4">All writes discarded, gas already spent stays spent.</dd>
+        <dt data-i18n="ethereum.dt5">EIP-170 code size limit</dt>
+        <dd data-i18n="ethereum.dd5">24 576 bytes. Same reasoning: bound worst-case validation cost.</dd>
+        <dt data-i18n="ethereum.dt6">EIP-3529 refund cap</dt>
+        <dd data-i18n="ethereum.dd6">Storage-clearing refunds capped at 20 % of gas used, so refunds can never be farmed into gas tokens.</dd>
+        <dt data-i18n="ethereum.dt7">CREATE-style addresses</dt>
+        <dd data-i18n="ethereum.dd7">Deterministic from <code>(deployer, nonce)</code>, so a deployer knows the address before mining.</dd>
       </dl>
     </div>
     <div class="split-col">
-      <h3 class="col-title drop-title">Refused</h3>
+      <h3 data-i18n="ethereum.h32" class="col-title drop-title">Refused</h3>
       <dl class="deflist">
-        <dt>CALL / DELEGATECALL</dt>
-        <dd>Cross-contract reentrancy is the single largest source of value lost on Ethereum. DeckxCoin contracts are leaves. Removing the opcode removes the bug class, instead of asking every developer to remember a mutex.</dd>
-        <dt>Contract balances</dt>
-        <dd>No <code>balance</code> field. Contracts authorise spends of UTXOs; they never custody them.</dd>
+        <dt data-i18n="ethereum.dt8">CALL / DELEGATECALL</dt>
+        <dd data-i18n="ethereum.dd8">Cross-contract reentrancy is the single largest source of value lost on Ethereum. DeckxCoin contracts are leaves. Removing the opcode removes the bug class, instead of asking every developer to remember a mutex.</dd>
+        <dt data-i18n="ethereum.dt9">Contract balances</dt>
+        <dd data-i18n="ethereum.dd9">No <code>balance</code> field. Contracts authorise spends of UTXOs; they never custody them.</dd>
         <dt>SELFDESTRUCT</dt>
-        <dd>State that can vanish underneath a pending transaction is a footgun with no remaining legitimate use.</dd>
-        <dt>Unbounded BALANCE probing</dt>
-        <dd>A contract may read only its own balance. Probing arbitrary accounts is a privacy leak with no use case here.</dd>
-        <dt>Hexary Merkle-Patricia trie</dt>
-        <dd>Replaced with a sorted binary trie: same canonical root, same O(log n) proofs, about a tenth of the code — and therefore a tenth of the surface for a state-root divergence bug.</dd>
+        <dd data-i18n="ethereum.dd10">State that can vanish underneath a pending transaction is a footgun with no remaining legitimate use.</dd>
+        <dt data-i18n="ethereum.dt11">Unbounded BALANCE probing</dt>
+        <dd data-i18n="ethereum.dd11">A contract may read only its own balance. Probing arbitrary accounts is a privacy leak with no use case here.</dd>
+        <dt data-i18n="ethereum.dt12">Hexary Merkle-Patricia trie</dt>
+        <dd data-i18n="ethereum.dd12">Replaced with a sorted binary trie: same canonical root, same O(log n) proofs, about a tenth of the code — and therefore a tenth of the surface for a state-root divergence bug.</dd>
         <dt>Keccak</dt>
-        <dd>One hash family for the whole chain (SHA-256, domain-tagged BIP-340 style). Fewer primitives, fewer ways to get domain separation wrong.</dd>
+        <dd data-i18n="ethereum.dd13">One hash family for the whole chain (SHA-256, domain-tagged BIP-340 style). Fewer primitives, fewer ways to get domain separation wrong.</dd>
       </dl>
     </div>
   </div>
 
   <div class="callout">
-    <h4>Where Ethereum actually stands in 2026</h4>
+    <h4 data-i18n="ethereum.h41">Where Ethereum actually stands in 2026</h4>
     <ul class="tight">
-      <li><strong>Fusaka</strong> activated <strong>December 2025</strong>, shipping PeerDAS to scale rollup data availability.</li>
-      <li><strong>Glamsterdam</strong> is the next hard fork, targeting <strong>H2 2026</strong>. Its two headline proposals are
+      <li data-i18n="ethereum.li1"><strong>Fusaka</strong> activated <strong>December 2025</strong>, shipping PeerDAS to scale rollup data availability.</li>
+      <li data-i18n="ethereum.li2"><strong>Glamsterdam</strong> is the next hard fork, targeting <strong>H2 2026</strong>. Its two headline proposals are
         <strong>EIP-7732 (enshrined proposer-builder separation)</strong> and
         <strong>EIP-7928 (block-level access lists)</strong>, alongside EIP-7778, 7843, 7976, 7981 and 8024.</li>
-      <li>The fork reached its final devnet stage with ten EIPs locked in and a path cleared toward a
+      <li data-i18n="ethereum.li3">The fork reached its final devnet stage with ten EIPs locked in and a path cleared toward a
         <strong>200 M gas-limit</strong> floor. Ethereum Foundation contributors have said Glamsterdam is
         proving trickier and slower than Fusaka, so a slip is possible.</li>
     </ul>
-    <p>
+    <p data-i18n="ethereum.p2">
       Note what block-level access lists are <em>for</em>: telling validators up front which state a
       block touches, so execution can be parallelised. That is a property a UTXO chain has by
       construction — inputs name their own history. DeckxCoin does not need EIP-7928 because it
       never gave up the thing EIP-7928 is trying to recover.
     </p>
-    <p class="sources">
+    <p data-i18n="ethereum.p3" class="sources">
       Sources:
       <a href="https://ethereum.org/roadmap/glamsterdam/" rel="noopener">ethereum.org — Glamsterdam</a> ·
       <a href="https://blog.ethereum.org/2026/01/20/checkpoint-8" rel="noopener">EF blog — Checkpoint #8, Jan 2026</a> ·
@@ -304,26 +304,26 @@
 <section id="fusion" class="section alt">
   <div class="section-head">
     <span class="section-index">04</span>
-    <h2>The fusion: covenant outputs</h2>
-    <p class="section-sub">Bitcoin's outputs. Ethereum's authoriser. One rule, twelve lines of consensus code.</p>
+    <h2 data-i18n="fusion.h21">The fusion: covenant outputs</h2>
+    <p data-i18n="fusion.p1" class="section-sub">Bitcoin's outputs. Ethereum's authoriser. One rule, twelve lines of consensus code.</p>
   </div>
 
   <div class="prose">
-    <p>
+    <p data-i18n="fusion.p2">
       An address whose bech32m version byte is <code>1</code> is a contract address. An output paid
       to one is a normal UTXO in every respect except its unlocking condition:
     </p>
   </div>
 
   <div class="rule-box">
-    <p class="rule-title">Consensus rule — covenant spend</p>
+    <p data-i18n="fusion.p3" class="rule-title">Consensus rule — covenant spend</p>
     <ol>
-      <li>The spending transaction must be of kind <code>call</code>.</li>
-      <li>Its <code>contract.target</code> must equal the address that locked the output.</li>
-      <li>The contract must execute successfully and return a non-zero first word (<em>approved</em>).</li>
-      <li>If the contract returns a second word, some output of the transaction must pay that address.</li>
+      <li data-i18n="fusion.li1">The spending transaction must be of kind <code>call</code>.</li>
+      <li data-i18n="fusion.li2">Its <code>contract.target</code> must equal the address that locked the output.</li>
+      <li data-i18n="fusion.li3">The contract must execute successfully and return a non-zero first word (<em>approved</em>).</li>
+      <li data-i18n="fusion.li4">If the contract returns a second word, some output of the transaction must pay that address.</li>
     </ol>
-    <p class="rule-note">
+    <p data-i18n="fusion.p4" class="rule-note">
       Rule 4 is the one that is easy to miss. Without it, an approval is a bearer token: anyone who
       sees a valid approved call can rebroadcast it with the outputs pointing at themselves.
       <code>test/covenant.test.ts</code> asserts exactly this attack fails.
@@ -341,15 +341,15 @@
   </div>
 
   <div class="prose">
-    <h3>The reference contract: REKT Vault</h3>
-    <p>
+    <h3 data-i18n="fusion.h31">The reference contract: REKT Vault</h3>
+    <p data-i18n="fusion.p5">
       A time-locked release, written in DVM assembly. It is the contract deployed in the live
       scenario below — the same bytecode whose storage you can read in the explorer.
     </p>
   </div>
 
   <div class="code-block">
-    <div class="code-head"><span>src/scenario.ts · rektVaultCode()</span><button class="copy-btn" data-copy="#vault-code">copy</button></div>
+    <div class="code-head"><span>src/scenario.ts · rektVaultCode()</span><button data-i18n="fusion.button1" class="copy-btn" data-copy="#vault-code">copy</button></div>
 <pre id="vault-code"><code>asm(
   <span class="c">// First execution only: seed the terms. slot 0 is zero exactly once.</span>
   0n, OP.SLOAD, OP.ISZERO, '@init', OP.JUMPI,
@@ -371,7 +371,7 @@
 )</code></pre>
   </div>
 
-  <p class="prose">
+  <p data-i18n="fusion.p6" class="prose">
     Compare this with what Bitcoin would need. A vault with the same semantics requires
     <code>OP_CTV</code> (unactivated), or <code>OP_CAT</code> plus signature gymnastics (unactivated),
     or a trusted co-signer. Ethereum can express it in Solidity in ten lines — but the contract must
@@ -384,19 +384,19 @@
 <section id="supply" class="section">
   <div class="section-head">
     <span class="section-index">05</span>
-    <h2>Monetary policy</h2>
-    <p class="section-sub">21,000,000 DECKX. Halving every 365 days. The initial subsidy is derived, not chosen.</p>
+    <h2 data-i18n="supply.h21">Monetary policy</h2>
+    <p data-i18n="supply.p1" class="section-sub">21,000,000 DECKX. Halving every 365 days. The initial subsidy is derived, not chosen.</p>
   </div>
 
   <div class="cards four compact" id="supply-stats"></div>
 
   <div class="prose">
-    <p>
+    <p data-i18n="supply.p2">
       Bitcoin halves every 210,000 blocks — roughly four years. DeckxCoin halves every
       <strong>365 days</strong>, which at 600-second spacing is exactly
       <code>365 × 24 × 6 = 52,560 blocks</code>.
     </p>
-    <p>
+    <p data-i18n="supply.p3">
       Fixing both the cap and the interval leaves no freedom in the initial subsidy. A geometric
       halving series sums to <code>2 × interval × subsidy</code>, so the constant falls out of the
       constraint:
@@ -404,7 +404,7 @@
   </div>
 
   <div class="code-block">
-    <div class="code-head"><span>src/block.ts</span><button class="copy-btn" data-copy="#subsidy-derivation">copy</button></div>
+    <div class="code-head"><span>src/block.ts</span><button data-i18n="supply.button1" class="copy-btn" data-copy="#subsidy-derivation">copy</button></div>
 <pre id="subsidy-derivation"><code>MAX_SUPPLY       = 21_000_000 × 100_000_000        = 2,100,000,000,000,000 zaps
 HALVING_INTERVAL = 365 × 24 × 6                    = 52,560 blocks
 INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
@@ -415,21 +415,21 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   </div>
 
   <div class="prose">
-    <p>
+    <p data-i18n="supply.p4">
       That constant is ugly, and it is ugly on purpose. Rounding up to a tidy 200 DECKX would issue
       <strong>21,024,000 DECKX</strong> — over the cap — and then require a special-cased final era to
       clip the excess. A discontinuity in the issuance curve is a consensus edge case that gets
       exercised exactly once, decades after anyone last thought about it. The derived constant lands
       under the cap on its own, exactly as Bitcoin's does.
     </p>
-    <p>
+    <p data-i18n="supply.p5">
       The cap is <em>additionally</em> enforced as a consensus rule rather than left as a property of
       the arithmetic. The check should never fire; that is precisely why it is cheap insurance.
     </p>
   </div>
 
   <div class="warn-box amber">
-    <p>
+    <p data-i18n="supply.p6">
       <strong>The cost of a one-year halving, stated plainly.</strong> This schedule front-loads
       issuance hard: roughly <strong>50 % of all DECKX exists after one year</strong> and
       <strong>99.9 % within a decade</strong>. Bitcoin reaches the equivalent point around 2140.
@@ -439,14 +439,14 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
     </p>
   </div>
 
-  <h3 class="sub-head">Issuance curve</h3>
-  <p class="sub-note">Cumulative supply as a percentage of the 21,000,000 cap, one bar per halving era.</p>
+  <h3 data-i18n="supply.h31" class="sub-head">Issuance curve</h3>
+  <p data-i18n="supply.p7" class="sub-note">Cumulative supply as a percentage of the 21,000,000 cap, one bar per halving era.</p>
   <div class="curve" id="issuance-curve"></div>
 
-  <h3 class="sub-head">Emission schedule</h3>
+  <h3 data-i18n="supply.h32" class="sub-head">Emission schedule</h3>
   <div class="table-wrap">
     <table class="spec" id="schedule-table">
-      <thead><tr><th>Year</th><th>Start height</th><th>Block subsidy</th><th>Cumulative supply</th><th>% of cap</th></tr></thead>
+      <thead><tr><th data-i18n="supply.th1">Year</th><th data-i18n="supply.th2">Start height</th><th data-i18n="supply.th3">Block subsidy</th><th data-i18n="supply.th4">Cumulative supply</th><th data-i18n="supply.th5">% of cap</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -456,20 +456,20 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 <section id="contracts" class="section alt">
   <div class="section-head">
     <span class="section-index">06</span>
-    <h2>The standard covenant library</h2>
-    <p class="section-sub">
+    <h2 data-i18n="contracts.h21">The standard covenant library</h2>
+    <p data-i18n="contracts.p1" class="section-sub">
       Five contracts covering the patterns account-model chains implement as custodial token
       contracts — and implementing them as spending conditions instead.
     </p>
   </div>
 
   <div class="prose">
-    <p>
+    <p data-i18n="contracts.p2">
       The structural difference matters. On Ethereum a vesting contract holds everyone's tokens, so a
       bug in it drains all of them. Here a vesting covenant guards one output belonging to one
       beneficiary. <strong>The blast radius of a bug is the output, not the protocol.</strong>
     </p>
-    <p>
+    <p data-i18n="contracts.p3">
       Every contract below publishes its storage layout, its exact approval conditions, and its
       caveats. A test enforces that each one declares <em>at least two</em> caveats — a contract whose
       author has found none has not looked hard enough.
@@ -479,8 +479,8 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   <div class="contract-grid" id="contract-library"></div>
 
   <div class="callout small">
-    <h4>Authoring covenants</h4>
-    <p>
+    <h4 data-i18n="contracts.h41">Authoring covenants</h4>
+    <p data-i18n="contracts.p4">
       Contracts are assembled from named fragments in <code>src/contracts/lib.ts</code> rather than
       written as raw opcodes — the stack order of <code>SSTORE</code> alone (value, then key) caused
       more bugs during this project than every cryptographic primitive combined. Loops over owners are
@@ -494,8 +494,8 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 <section id="dvm" class="section">
   <div class="section-head">
     <span class="section-index">07</span>
-    <h2>DVM — the Deckx Virtual Machine</h2>
-    <p class="section-sub">44 opcodes — 102 instructions once the PUSH/DUP/SWAP families are expanded. 1024-deep stack, deterministic. No clock, no randomness, no I/O.</p>
+    <h2 data-i18n="dvm.h21">DVM — the Deckx Virtual Machine</h2>
+    <p data-i18n="dvm.p1" class="section-sub">44 opcodes — 102 instructions once the PUSH/DUP/SWAP families are expanded. 1024-deep stack, deterministic. No clock, no randomness, no I/O.</p>
   </div>
 
   <div class="cards four compact">
@@ -507,25 +507,25 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 
   <div class="table-wrap">
     <table class="spec ops">
-      <thead><tr><th>Family</th><th>Opcodes</th><th>Gas</th><th>Notes</th></tr></thead>
+      <thead><tr><th data-i18n="dvm.th1">Family</th><th data-i18n="dvm.th2">Opcodes</th><th data-i18n="dvm.th3">Gas</th><th data-i18n="dvm.th4">Notes</th></tr></thead>
       <tbody>
-        <tr><td>Arithmetic</td><td><code>ADD MUL SUB DIV MOD EXP</code></td><td>3 – 10 (+50/byte for EXP)</td><td>Wraps at 2²⁵⁶. Division by zero yields zero rather than trapping — same as the EVM.</td></tr>
-        <tr><td>Comparison</td><td><code>LT GT EQ ISZERO</code></td><td>3</td><td>Unsigned only. No signed variants in v0.1.</td></tr>
-        <tr><td>Bitwise</td><td><code>AND OR XOR NOT SHL SHR</code></td><td>3</td><td>Shifts ≥ 256 yield zero.</td></tr>
-        <tr><td>Hashing</td><td><code>SHA256</code></td><td>60</td><td>One word in, one word out. The only hash primitive.</td></tr>
-        <tr><td>Context</td><td><code>ADDRESS CALLER CALLVALUE CALLDATA CALLDATASIZE NUMBER TIMESTAMP PC GAS</code></td><td>2 – 3</td><td>Every value is a deterministic function of the block and transaction.</td></tr>
-        <tr><td>Account</td><td><code>BALANCE</code></td><td>100</td><td>Own balance only. Probing others returns zero.</td></tr>
-        <tr><td>Storage</td><td><code>SLOAD SSTORE</code></td><td>100 / 20 000 · 2 900</td><td>20 000 for a zero→non-zero write, 2 900 to overwrite, 4 800 refund on clear (capped at 20 % of gas used).</td></tr>
-        <tr><td>Control</td><td><code>JUMP JUMPI JUMPDEST STOP RETURN REVERT</code></td><td>0 – 10</td><td>Jump targets are pre-scanned; a <code>0x5b</code> byte inside PUSH data is never a valid destination.</td></tr>
-        <tr><td>Stack</td><td><code>PUSH1–32 DUP1–16 SWAP1–16 POP</code></td><td>2 – 3</td><td>Underflow and overflow are clean failures, never host crashes.</td></tr>
-        <tr><td>Events</td><td><code>LOG</code></td><td>375 + 8/word</td><td>One topic, up to 8 data words.</td></tr>
+        <tr><td data-i18n="dvm.td1">Arithmetic</td><td><code>ADD MUL SUB DIV MOD EXP</code></td><td data-i18n="dvm.td3">3 – 10 (+50/byte for EXP)</td><td data-i18n="dvm.td4">Wraps at 2²⁵⁶. Division by zero yields zero rather than trapping — same as the EVM.</td></tr>
+        <tr><td data-i18n="dvm.td5">Comparison</td><td><code>LT GT EQ ISZERO</code></td><td>3</td><td data-i18n="dvm.td7">Unsigned only. No signed variants in v0.1.</td></tr>
+        <tr><td data-i18n="dvm.td8">Bitwise</td><td><code>AND OR XOR NOT SHL SHR</code></td><td>3</td><td data-i18n="dvm.td10">Shifts ≥ 256 yield zero.</td></tr>
+        <tr><td data-i18n="dvm.td11">Hashing</td><td><code>SHA256</code></td><td>60</td><td data-i18n="dvm.td13">One word in, one word out. The only hash primitive.</td></tr>
+        <tr><td data-i18n="dvm.td14">Context</td><td><code>ADDRESS CALLER CALLVALUE CALLDATA CALLDATASIZE NUMBER TIMESTAMP PC GAS</code></td><td>2 – 3</td><td data-i18n="dvm.td16">Every value is a deterministic function of the block and transaction.</td></tr>
+        <tr><td data-i18n="dvm.td17">Account</td><td><code>BALANCE</code></td><td>100</td><td data-i18n="dvm.td19">Own balance only. Probing others returns zero.</td></tr>
+        <tr><td data-i18n="dvm.td20">Storage</td><td><code>SLOAD SSTORE</code></td><td>100 / 20 000 · 2 900</td><td data-i18n="dvm.td23">20 000 for a zero→non-zero write, 2 900 to overwrite, 4 800 refund on clear (capped at 20 % of gas used).</td></tr>
+        <tr><td data-i18n="dvm.td24">Control</td><td><code>JUMP JUMPI JUMPDEST STOP RETURN REVERT</code></td><td>0 – 10</td><td data-i18n="dvm.td26">Jump targets are pre-scanned; a <code>0x5b</code> byte inside PUSH data is never a valid destination.</td></tr>
+        <tr><td data-i18n="dvm.td27">Stack</td><td><code>PUSH1–32 DUP1–16 SWAP1–16 POP</code></td><td>2 – 3</td><td data-i18n="dvm.td29">Underflow and overflow are clean failures, never host crashes.</td></tr>
+        <tr><td data-i18n="dvm.td30">Events</td><td><code>LOG</code></td><td>375 + 8/word</td><td data-i18n="dvm.td33">One topic, up to 8 data words.</td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="callout small">
-    <h4>Determinism, stated precisely</h4>
-    <p>
+    <h4 data-i18n="dvm.h41">Determinism, stated precisely</h4>
+    <p data-i18n="dvm.p2">
       Execution is a pure function of <code>(code, calldata, context, storage)</code>. The context
       carries only <code>blockNumber</code>, <code>blockTime</code>, <code>caller</code>,
       <code>callValue</code> and a balance lookup — all of which are fixed once the block is fixed.
@@ -540,12 +540,12 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 <section id="volt" class="section alt">
   <div class="section-head">
     <span class="section-index">08</span>
-    <h2>Volt — the Lightning-shaped layer</h2>
-    <p class="section-sub">Two on-chain transactions per channel. Everything between them is off-chain, atomic, and private.</p>
+    <h2 data-i18n="volt.h21">Volt — the Lightning-shaped layer</h2>
+    <p data-i18n="volt.p1" class="section-sub">Two on-chain transactions per channel. Everything between them is off-chain, atomic, and private.</p>
   </div>
 
   <div class="prose">
-    <p>
+    <p data-i18n="volt.p2">
       Volt is a faithful implementation of the Poon–Dryja construction, mapped onto DeckxCoin's
       script types. The security argument is asymmetry: <strong>whoever broadcasts a channel state
       is the one who waits, and whoever broadcasts an old one loses everything.</strong>
@@ -554,38 +554,38 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 
   <div class="table-wrap">
     <table class="spec">
-      <thead><tr><th>Lightning concept</th><th>BOLT</th><th>Volt implementation</th><th>Status</th></tr></thead>
+      <thead><tr><th data-i18n="volt.th1">Lightning concept</th><th>BOLT</th><th data-i18n="volt.th3">Volt implementation</th><th data-i18n="volt.th4">Status</th></tr></thead>
       <tbody>
-        <tr><td>Funding output</td><td>BOLT 2</td><td>2-of-2 <code>multisig2</code> script; both parties sign the identical sighash. One signature is rejected.</td><td class="done">implemented</td></tr>
-        <tr><td>Asymmetric commitments</td><td>BOLT 3</td><td>Each party holds a commitment where its <em>own</em> output is CSV-delayed 144 blocks and revocable by the counterparty.</td><td class="done">implemented</td></tr>
-        <tr><td>Revocation keys</td><td>BOLT 3</td><td>Full elliptic-curve derivation: <code>revBase·h₁ + perCommitPoint·h₂</code>. Both parties can compute the public key; only the counterparty can ever compute the private one.</td><td class="done">implemented</td></tr>
-        <tr><td>Per-commitment secrets</td><td>BOLT 3</td><td>Hash chain of depth 4096 — revealing secret <em>i</em> derives every earlier secret, so storage is O(1). BOLT-03 uses a 48-bit indexed tree for the same property.</td><td class="done">implemented</td></tr>
-        <tr><td>HTLCs</td><td>BOLT 3</td><td>Hash + absolute timeout, two mutually exclusive branches, both validated by the real chain in tests: preimage sweep and timeout refund.</td><td class="done">implemented</td></tr>
-        <tr><td>Penalty transaction</td><td>BOLT 5</td><td>Sweeps both the cheater's delayed output and the punisher's own, in one transaction, with no CSV wait.</td><td class="done">implemented</td></tr>
-        <tr><td>Sphinx onion routing</td><td>BOLT 4</td><td>1366-byte constant-size packet, 20 hop slots, ephemeral-key blinding chain, deterministic filler, per-hop HMAC.</td><td class="done">implemented</td></tr>
-        <tr><td>Invoices</td><td>BOLT 11</td><td>bech32m <code>lnvolt1…</code>, signed by the payee, with amount, payment hash, expiry and min-final-CLTV.</td><td class="done">implemented</td></tr>
-        <tr><td>Pathfinding</td><td>—</td><td>Reverse Dijkstra with amount-dependent fees and a time-lock risk factor; returns ranked alternatives because balances are private.</td><td class="done">implemented</td></tr>
-        <tr><td>PTLCs (point time-locks)</td><td>draft</td><td>Every channel already carries the adaptor point, and signatures are now BIP-340 Schnorr — the scheme adaptor signatures require. Settlement still uses hash locks.</td><td class="partial">scaffolded</td></tr>
-        <tr><td>Splicing</td><td>BOLT 2</td><td>Resizing a channel without closing it.</td><td class="todo">not implemented</td></tr>
-        <tr><td>Watchtowers</td><td>BOLT 13 draft</td><td>Blobs encrypted with the second half of the commitment txid and keyed by the first half, so the tower cannot read what it stores or tell which channel it guards. Fee ladders with escalation, persisted to SQLite, signed receipts and retention audits.</td><td class="done">implemented</td></tr>
-        <tr><td>Route hints / private channels</td><td>BOLT 11</td><td>Payers that cannot find a public path simply fail.</td><td class="todo">not implemented</td></tr>
+        <tr><td data-i18n="volt.td1">Funding output</td><td>BOLT 2</td><td data-i18n="volt.td3">2-of-2 <code>multisig2</code> script; both parties sign the identical sighash. One signature is rejected.</td><td data-i18n="volt.td4" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td5">Asymmetric commitments</td><td>BOLT 3</td><td data-i18n="volt.td7">Each party holds a commitment where its <em>own</em> output is CSV-delayed 144 blocks and revocable by the counterparty.</td><td data-i18n="volt.td8" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td9">Revocation keys</td><td>BOLT 3</td><td data-i18n="volt.td11">Full elliptic-curve derivation: <code>revBase·h₁ + perCommitPoint·h₂</code>. Both parties can compute the public key; only the counterparty can ever compute the private one.</td><td data-i18n="volt.td12" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td13">Per-commitment secrets</td><td>BOLT 3</td><td data-i18n="volt.td15">Hash chain of depth 4096 — revealing secret <em>i</em> derives every earlier secret, so storage is O(1). BOLT-03 uses a 48-bit indexed tree for the same property.</td><td data-i18n="volt.td16" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td17">HTLCs</td><td>BOLT 3</td><td data-i18n="volt.td19">Hash + absolute timeout, two mutually exclusive branches, both validated by the real chain in tests: preimage sweep and timeout refund.</td><td data-i18n="volt.td20" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td21">Penalty transaction</td><td>BOLT 5</td><td data-i18n="volt.td23">Sweeps both the cheater's delayed output and the punisher's own, in one transaction, with no CSV wait.</td><td data-i18n="volt.td24" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td25">Sphinx onion routing</td><td>BOLT 4</td><td data-i18n="volt.td27">1366-byte constant-size packet, 20 hop slots, ephemeral-key blinding chain, deterministic filler, per-hop HMAC.</td><td data-i18n="volt.td28" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td29">Invoices</td><td>BOLT 11</td><td data-i18n="volt.td31">bech32m <code>lnvolt1…</code>, signed by the payee, with amount, payment hash, expiry and min-final-CLTV.</td><td data-i18n="volt.td32" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td33">Pathfinding</td><td>—</td><td data-i18n="volt.td34">Reverse Dijkstra with amount-dependent fees and a time-lock risk factor; returns ranked alternatives because balances are private.</td><td data-i18n="volt.td35" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td36">PTLCs (point time-locks)</td><td data-i18n="volt.td37">draft</td><td data-i18n="volt.td38">Every channel already carries the adaptor point, and signatures are now BIP-340 Schnorr — the scheme adaptor signatures require. Settlement still uses hash locks.</td><td data-i18n="volt.td39" class="partial">scaffolded</td></tr>
+        <tr><td data-i18n="volt.td40">Splicing</td><td>BOLT 2</td><td data-i18n="volt.td42">Resizing a channel without closing it.</td><td data-i18n="volt.td43" class="todo">not implemented</td></tr>
+        <tr><td data-i18n="volt.td44">Watchtowers</td><td>BOLT 13 draft</td><td data-i18n="volt.td46">Blobs encrypted with the second half of the commitment txid and keyed by the first half, so the tower cannot read what it stores or tell which channel it guards. Fee ladders with escalation, persisted to SQLite, signed receipts and retention audits.</td><td data-i18n="volt.td47" class="done">implemented</td></tr>
+        <tr><td data-i18n="volt.td48">Route hints / private channels</td><td>BOLT 11</td><td data-i18n="volt.td50">Payers that cannot find a public path simply fail.</td><td data-i18n="volt.td51" class="todo">not implemented</td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="callout">
-    <h4>Where Lightning actually stands in 2026</h4>
+    <h4 data-i18n="volt.h41">Where Lightning actually stands in 2026</h4>
     <ul class="tight">
-      <li><strong>Taproot channels</strong> are live — Phoenix shipped full support, cutting roughly 20 % off open/close on-chain fees and making channel transactions indistinguishable from single-sig spends.</li>
-      <li><strong>Splicing</strong> was merged into the BOLT specification and enabled by default in Core Lightning during 2026; Eclair has cross-implementation interop and LDK moved splice-out from experimental bit 155 to production bit 63.</li>
-      <li><strong>BOLT 12 offers</strong> merged into the spec in late 2024; Core Lightning, LDK and Eclair support them natively, though LND — still the most deployed implementation — lacks native Offers support as of mid-2026.</li>
-      <li><strong>PTLCs</strong> are underway: adaptor signatures instead of hashes, so the same payment hash no longer identifies one payment across every hop.</li>
+      <li data-i18n="volt.li1"><strong>Taproot channels</strong> are live — Phoenix shipped full support, cutting roughly 20 % off open/close on-chain fees and making channel transactions indistinguishable from single-sig spends.</li>
+      <li data-i18n="volt.li2"><strong>Splicing</strong> was merged into the BOLT specification and enabled by default in Core Lightning during 2026; Eclair has cross-implementation interop and LDK moved splice-out from experimental bit 155 to production bit 63.</li>
+      <li data-i18n="volt.li3"><strong>BOLT 12 offers</strong> merged into the spec in late 2024; Core Lightning, LDK and Eclair support them natively, though LND — still the most deployed implementation — lacks native Offers support as of mid-2026.</li>
+      <li data-i18n="volt.li4"><strong>PTLCs</strong> are underway: adaptor signatures instead of hashes, so the same payment hash no longer identifies one payment across every hop.</li>
     </ul>
-    <p>
+    <p data-i18n="volt.p3">
       Volt sits deliberately at the <em>2018–2024</em> feature line — the parts that are settled and
       auditable — with the PTLC upgrade scaffolded rather than half-built.
     </p>
-    <p class="sources">
+    <p data-i18n="volt.p4" class="sources">
       Sources:
       <a href="https://www.spark.money/research/lightning-network-2026-state" rel="noopener">Spark — State of Lightning 2026</a> ·
       <a href="https://voltage.cloud/blog/bitcoin-education/how-taproot-improves-the-lightning-network/" rel="noopener">Voltage — Taproot and Lightning</a> ·
@@ -594,8 +594,8 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   </div>
 
   <div class="prose">
-    <h3>Why the onion is 1366 bytes no matter what</h3>
-    <p>
+    <h3 data-i18n="volt.h31">Why the onion is 1366 bytes no matter what</h3>
+    <p data-i18n="volt.p5">
       A one-hop route and a twenty-hop route produce byte-identical packet sizes. Each hop shifts the
       routing block and appends fresh keystream to the tail; without the sender's pre-computed
       <em>filler</em>, that tail would decrypt to zeroes and instantly reveal how many hops remain.
@@ -610,8 +610,8 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 <section id="network" class="section">
   <div class="section-head">
     <span class="section-index">09</span>
-    <h2>The node</h2>
-    <p class="section-sub">
+    <h2 data-i18n="network.h21">The node</h2>
+    <p data-i18n="network.p1" class="section-sub">
       P2P over real TCP, SQLite persistence, and reorganisation with undo records. This is the part
       that turns a library into a network.
     </p>
@@ -625,13 +625,13 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   </div>
 
   <div class="prose">
-    <p>
+    <p data-i18n="network.p2">
       The chain shipped as a library first, and a library is not a network. Two miners find a block
       at the same height within hours of any real deployment, and an append-only chain has no answer
       for that. Four things had to exist before <em>testnet</em> meant anything:
       <strong>durability, a block index, undo records, and a wire protocol.</strong>
     </p>
-    <p>
+    <p data-i18n="network.p3">
       Persistence uses <code>node:sqlite</code>, which ships with Node. The full node therefore adds
       <strong>zero dependencies</strong> to the three the chain already had.
     </p>
@@ -639,62 +639,62 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 
   <div class="table-wrap">
     <table class="spec">
-      <thead><tr><th>Concern</th><th>Approach</th></tr></thead>
+      <thead><tr><th data-i18n="network.th1">Concern</th><th data-i18n="network.th2">Approach</th></tr></thead>
       <tbody>
         <tr>
-          <td>Durability</td>
-          <td>WAL-mode SQLite. Every block applies inside a transaction — a half-written block is the single failure that silently forks a node off the network.</td>
+          <td data-i18n="network.td1">Durability</td>
+          <td data-i18n="network.td2">WAL-mode SQLite. Every block applies inside a transaction — a half-written block is the single failure that silently forks a node off the network.</td>
         </tr>
         <tr>
-          <td>Reorgs</td>
-          <td>Each block writes an <strong>undo record</strong>, so disconnecting restores the exact prior state in O(inputs) rather than replaying from genesis. After undo, the restored state root is checked against the parent's committed root — if they disagree the node halts instead of continuing on an unknown chain.</td>
+          <td data-i18n="network.td3">Reorgs</td>
+          <td data-i18n="network.td4">Each block writes an <strong>undo record</strong>, so disconnecting restores the exact prior state in O(inputs) rather than replaying from genesis. After undo, the restored state root is checked against the parent's committed root — if they disagree the node halts instead of continuing on an unknown chain.</td>
         </tr>
         <tr>
-          <td>Fork choice</td>
-          <td>Most accumulated work, not longest. Losing branches are <em>retained</em>: a branch that loses today can win tomorrow, and a node that discarded it would have to re-download.</td>
+          <td data-i18n="network.td5">Fork choice</td>
+          <td data-i18n="network.td6">Most accumulated work, not longest. Losing branches are <em>retained</em>: a branch that loses today can win tomorrow, and a node that discarded it would have to re-download.</td>
         </tr>
         <tr>
-          <td>Failed reorgs</td>
-          <td>If any block on a new branch fails to connect, the entire move is rolled back and the original tip restored. A failed reorg must never leave a node half-applied.</td>
+          <td data-i18n="network.td7">Failed reorgs</td>
+          <td data-i18n="network.td8">If any block on a new branch fails to connect, the entire move is rolled back and the original tip restored. A failed reorg must never leave a node half-applied.</td>
         </tr>
         <tr>
-          <td>Depth limit</td>
-          <td>A reorg deeper than the undo window is <strong>refused</strong>, not attempted with missing data.</td>
+          <td data-i18n="network.td9">Depth limit</td>
+          <td data-i18n="network.td10">A reorg deeper than the undo window is <strong>refused</strong>, not attempted with missing data.</td>
         </tr>
         <tr>
-          <td>Mempool</td>
-          <td>Transactions from disconnected blocks return to the pool; those in connected blocks leave it; the remainder is revalidated against the new tip. Skipping this is how a node ends up relaying transactions a reorg already invalidated.</td>
+          <td data-i18n="network.td11">Mempool</td>
+          <td data-i18n="network.td12">Transactions from disconnected blocks return to the pool; those in connected blocks leave it; the remainder is revalidated against the new tip. Skipping this is how a node ends up relaying transactions a reorg already invalidated.</td>
         </tr>
         <tr>
-          <td>Orphans</td>
-          <td>Blocks arriving before their parent are held — bounded to 100, because an unbounded orphan pool is a free memory-exhaustion attack — and connected once the gap fills.</td>
+          <td data-i18n="network.td13">Orphans</td>
+          <td data-i18n="network.td14">Blocks arriving before their parent are held — bounded to 100, because an unbounded orphan pool is a free memory-exhaustion attack — and connected once the gap fills.</td>
         </tr>
         <tr>
-          <td>Wire encryption</td>
-          <td>Ephemeral ECDH, then ChaCha20-Poly1305 per frame. Plaintext frames let anyone on the path see which transactions originate at which node — a deanonymisation oracle given away for free. The <em>length prefix is encrypted too</em>, because message sizes are a fingerprint: 1366 bytes is an onion, 24 bytes is a handshake acknowledgement. Keys ratchet forward every 4096 frames.</td>
+          <td data-i18n="network.td15">Wire encryption</td>
+          <td data-i18n="network.td16">Ephemeral ECDH, then ChaCha20-Poly1305 per frame. Plaintext frames let anyone on the path see which transactions originate at which node — a deanonymisation oracle given away for free. The <em>length prefix is encrypted too</em>, because message sizes are a fingerprint: 1366 bytes is an onion, 24 bytes is a handshake acknowledgement. Keys ratchet forward every 4096 frames.</td>
         </tr>
         <tr>
-          <td>Identity binding</td>
-          <td>Encryption alone only defeats a <em>passive</em> observer; an attacker who terminates both legs reads everything. Each side therefore signs the session transcript with a long-term Schnorr key. A relay holds different session ids on its two legs, so a signature it received from one side cannot authenticate it to the other. A test builds a working man-in-the-middle, shows it decrypting real frames, and shows it refused anyway.</td>
+          <td data-i18n="network.td17">Identity binding</td>
+          <td data-i18n="network.td18">Encryption alone only defeats a <em>passive</em> observer; an attacker who terminates both legs reads everything. Each side therefore signs the session transcript with a long-term Schnorr key. A relay holds different session ids on its two legs, so a signature it received from one side cannot authenticate it to the other. A test builds a working man-in-the-middle, shows it decrypting real frames, and shows it refused anyway.</td>
         </tr>
         <tr>
-          <td>What is still open</td>
-          <td>The handshake sends a bare 32-byte x-coordinate rather than a compressed point, which removes the constant <code>0x02</code>/<code>0x03</code> tell — but only about half of all 32-byte strings are valid x-coordinates, so a classifier still gets roughly one bit. Closing that needs ElligatorSwift, which is not implemented.</td>
+          <td data-i18n="network.td19">What is still open</td>
+          <td data-i18n="network.td20">The handshake sends a bare 32-byte x-coordinate rather than a compressed point, which removes the constant <code>0x02</code>/<code>0x03</code> tell — but only about half of all 32-byte strings are valid x-coordinates, so a classifier still gets roughly one bit. Closing that needs ElligatorSwift, which is not implemented.</td>
         </tr>
         <tr>
-          <td>Ban scoring</td>
-          <td>1 point for version skew, 10 for a protocol violation, 100 for an invalid block or a framing error. A peer that is merely <em>behind</em> is never banned; banning honest nodes for being out of date is how a network partitions itself.</td>
+          <td data-i18n="network.td21">Ban scoring</td>
+          <td data-i18n="network.td22">1 point for version skew, 10 for a protocol violation, 100 for an invalid block or a framing error. A peer that is merely <em>behind</em> is never banned; banning honest nodes for being out of date is how a network partitions itself.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <div class="prose">
-    <h3>Launch a three-node network</h3>
+    <h3 data-i18n="network.h31">Launch a three-node network</h3>
   </div>
 
   <div class="code-block">
-    <div class="code-head"><span>shell</span><button class="copy-btn" data-copy="#testnet-cmds">copy</button></div>
+    <div class="code-head"><span>shell</span><button data-i18n="network.button1" class="copy-btn" data-copy="#testnet-cmds">copy</button></div>
 <pre id="testnet-cmds"><code>cd chain
 node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
   </div>
@@ -716,8 +716,8 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
   </div>
 
   <div class="callout small">
-    <h4>Convergence is measured on the state root, not the tip hash</h4>
-    <p>
+    <h4 data-i18n="network.h41">Convergence is measured on the state root, not the tip hash</h4>
+    <p data-i18n="network.p4">
       Two nodes can agree on which block is the tip while disagreeing about the UTXO set underneath
       it — and that node forks off the network three blocks later, for reasons that look unrelated.
       Every convergence assertion in <code>test/network.test.ts</code> compares
@@ -726,13 +726,13 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
   </div>
 
   <div class="prose">
-    <h3>Volt watchtower</h3>
-    <p>
+    <h3 data-i18n="network.h32">Volt watchtower</h3>
+    <p data-i18n="network.p5">
       The penalty transaction closes the theft loophole in payment channels — but only if somebody
       broadcasts it. Until the watchtower existed, a channel was safe only while its owner was
       online, and "mostly online" is not a security property.
     </p>
-    <p>
+    <p data-i18n="network.p6">
       A naive tower is handed the channel list and the revocation secrets, and thereby learns the
       user's entire payment graph — a worse leak than the risk it removes. Instead each update
       registers an <strong>encrypted blob keyed by a hint</strong>: the first 16 bytes of the
@@ -748,8 +748,8 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 <section id="wallet" class="section">
   <div class="section-head">
     <span class="section-index">10</span>
-    <h2>The wallet</h2>
-    <p class="section-sub">
+    <h2 data-i18n="wallet.h21">The wallet</h2>
+    <p data-i18n="wallet.p1" class="section-sub">
       BIP-39 words, BIP-32 derivation, and the four things a wallet has to get right — one of which
       has cost people more money than every consensus bug combined.
     </p>
@@ -764,38 +764,38 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 
   <div class="table-wrap">
     <table class="spec">
-      <thead><tr><th>Concern</th><th>Approach</th></tr></thead>
+      <thead><tr><th data-i18n="wallet.th1">Concern</th><th data-i18n="wallet.th2">Approach</th></tr></thead>
       <tbody>
         <tr>
-          <td>A seed a human can write down</td>
-          <td>24 BIP-39 words with a checksum. The checksum is the point: without it a single mistyped word silently opens a <em>different</em> wallet, and the mistake is invisible until the funds fail to appear.</td>
+          <td data-i18n="wallet.td1">A seed a human can write down</td>
+          <td data-i18n="wallet.td2">24 BIP-39 words with a checksum. The checksum is the point: without it a single mistyped word silently opens a <em>different</em> wallet, and the mistake is invisible until the funds fail to appear.</td>
         </tr>
         <tr>
-          <td>Many addresses, one backup</td>
-          <td>BIP-32 derivation at <code>m/84'/9333'/account'/change/index</code>. The coin type is the P2P port rather than a SLIP-44 registration — claiming a registered number for a chain with no network would be squatting.</td>
+          <td data-i18n="wallet.td3">Many addresses, one backup</td>
+          <td data-i18n="wallet.td4">BIP-32 derivation at <code>m/84'/9333'/account'/change/index</code>. The coin type is the P2P port rather than a SLIP-44 registration — claiming a registered number for a chain with no network would be squatting.</td>
         </tr>
         <tr>
-          <td>Finding the coins again</td>
-          <td>Gap-limit discovery over both the receive and change branches. A wallet that stopped at the first empty address would miss funds sent to a gap, which happens routinely because addresses are handed out faster than they are paid.</td>
+          <td data-i18n="wallet.td5">Finding the coins again</td>
+          <td data-i18n="wallet.td6">Gap-limit discovery over both the receive and change branches. A wallet that stopped at the first empty address would miss funds sent to a gap, which happens routinely because addresses are handed out faster than they are paid.</td>
         </tr>
         <tr>
-          <td>Not losing the change</td>
-          <td>The most expensive wallet bug in history is a change output sent nowhere. Change goes to a derived address of the same wallet, never reused, and the amount is checked before signing. Change below the dust threshold becomes fee rather than an output nobody can afford to spend.</td>
+          <td data-i18n="wallet.td7">Not losing the change</td>
+          <td data-i18n="wallet.td8">The most expensive wallet bug in history is a change output sent nowhere. Change goes to a derived address of the same wallet, never reused, and the amount is checked before signing. Change below the dust threshold becomes fee rather than an output nobody can afford to spend.</td>
         </tr>
         <tr>
-          <td>Building valid transactions</td>
-          <td>Every transaction is dry-run through the chain's own validator before being returned. A wallet that hands you something the network will reject has done nothing useful.</td>
+          <td data-i18n="wallet.td9">Building valid transactions</td>
+          <td data-i18n="wallet.td10">Every transaction is dry-run through the chain's own validator before being returned. A wallet that hands you something the network will reject has done nothing useful.</td>
         </tr>
         <tr>
-          <td>Address rotation</td>
-          <td>A fresh address per payment. Reusing one links every payment you have ever received, and rotation is the single largest privacy improvement available to a wallet.</td>
+          <td data-i18n="wallet.td11">Address rotation</td>
+          <td data-i18n="wallet.td12">A fresh address per payment. Reusing one links every payment you have ever received, and rotation is the single largest privacy improvement available to a wallet.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <div class="warn-box">
-    <p>
+    <p data-i18n="wallet.p2">
       <strong>No encrypted keystore.</strong> Keys live in memory for the life of the process and
       reach disk only on an explicit export. A production wallet would encrypt at rest behind a
       passphrase. That is a real gap, and it is listed as one rather than glossed over.
@@ -803,8 +803,8 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
   </div>
 
   <div class="prose">
-    <h3>Recovery, tested properly</h3>
-    <p>
+    <h3 data-i18n="wallet.h31">Recovery, tested properly</h3>
+    <p data-i18n="wallet.p3">
       The recovery test does not check that a function returns the right value. It funds a wallet,
       spends from it so there is change on the second branch, then <strong>throws the wallet away
       entirely</strong> and rebuilds it from the twenty-four words — asserting it finds every coin,
@@ -817,8 +817,8 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 <section id="explorer" class="section alt">
   <div class="section-head">
     <span class="section-index">11</span>
-    <h2>Live chain explorer</h2>
-    <p class="section-sub">
+    <h2 data-i18n="explorer.h21">Live chain explorer</h2>
+    <p data-i18n="explorer.p1" class="section-sub">
       Every value below was produced by <code>chain/scripts/export-web-data.ts</code> running the real
       node. Nothing here is a mock. Re-run it and you get the same genesis hash.
     </p>
@@ -826,24 +826,24 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 
   <div class="explorer-grid" id="explorer-summary"></div>
 
-  <h3 class="sub-head">Scenario timeline</h3>
-  <p class="sub-note">Twelve steps, executed in order against a live chain with real proof of work.</p>
+  <h3 data-i18n="explorer.h31" class="sub-head">Scenario timeline</h3>
+  <p data-i18n="explorer.p2" class="sub-note">Twelve steps, executed in order against a live chain with real proof of work.</p>
   <ol class="timeline" id="timeline"></ol>
 
-  <h3 class="sub-head">Genesis block</h3>
+  <h3 data-i18n="explorer.h32" class="sub-head">Genesis block</h3>
   <div class="kv-grid" id="genesis-detail"></div>
 
-  <h3 class="sub-head">Notable blocks</h3>
-  <p class="sub-note">Blocks carrying more than a lone coinbase. Click to expand transactions.</p>
+  <h3 data-i18n="explorer.h33" class="sub-head">Notable blocks</h3>
+  <p data-i18n="explorer.p3" class="sub-note">Blocks carrying more than a lone coinbase. Click to expand transactions.</p>
   <div id="block-list" class="block-list"></div>
 
-  <h3 class="sub-head">Deployed contract</h3>
+  <h3 data-i18n="explorer.h34" class="sub-head">Deployed contract</h3>
   <div class="kv-grid" id="contract-detail"></div>
 
-  <h3 class="sub-head">Volt channels</h3>
+  <h3 data-i18n="explorer.h35" class="sub-head">Volt channels</h3>
   <div id="channel-list" class="channel-list"></div>
 
-  <h3 class="sub-head">The routed payment</h3>
+  <h3 data-i18n="explorer.h36" class="sub-head">The routed payment</h3>
   <div id="payment-detail" class="payment-detail"></div>
 </section>
 
@@ -851,29 +851,29 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 <section id="params" class="section">
   <div class="section-head">
     <span class="section-index">12</span>
-    <h2>Consensus parameters</h2>
-    <p class="section-sub">Everything a second implementation would need to agree with this one.</p>
+    <h2 data-i18n="params.h21">Consensus parameters</h2>
+    <p data-i18n="params.p1" class="section-sub">Everything a second implementation would need to agree with this one.</p>
   </div>
   <div class="table-wrap">
     <table class="spec params">
       <tbody>
-        <tr><td>Ticker</td><td><code>DECKX</code></td><td>Smallest unit <code>zap</code>, 10⁸ per DECKX</td></tr>
-        <tr><td>Max supply</td><td><code>21 000 000 DECKX</code></td><td>2 100 000 000 000 000 zaps — enforced at consensus, not just by arithmetic</td></tr>
-        <tr><td>Halving interval</td><td><code>52 560 blocks</code></td><td>Exactly 365 days at 600-second spacing</td></tr>
-        <tr><td>Initial subsidy</td><td><code>199.77168949 DECKX</code></td><td>Derived: <code>MAX_SUPPLY / (2 × 52 560)</code>. Not a chosen constant</td></tr>
-        <tr><td>Terminal height</td><td><code>1 839 599</code></td><td>Issuance reaches zero after 35 halvings ≈ 35 years</td></tr>
-        <tr><td>Target spacing</td><td><code>600 s</code></td><td>Block propagation ≪ block interval</td></tr>
-        <tr><td>Retarget interval</td><td><code>2016 blocks</code></td><td>Clamped to a 4× move per period in either direction</td></tr>
-        <tr><td>Genesis difficulty</td><td><code>0x1f00ffff</code></td><td>≈ 2⁻¹⁶, about 65 536 expected attempts — auditable on a laptop</td></tr>
-        <tr><td>Coinbase maturity</td><td><code>100 blocks</code></td><td>Reorg safety; enforced, not configurable</td></tr>
-        <tr><td>Max block transactions</td><td><code>4096</code></td><td>Plus a 30 000 000 block gas ceiling</td></tr>
-        <tr><td>Future drift limit</td><td><code>2 hours</code></td><td>Blocks must also exceed the median time of the last 11</td></tr>
-        <tr><td>Address format</td><td><code>bech32m</code>, HRP <code>dxc</code></td><td>Version 0 = key, version 1 = contract</td></tr>
-        <tr><td>Signature scheme</td><td><code>BIP-340 Schnorr</code></td><td>64-byte signatures over 32-byte x-only keys. Verified against the 15 official BIP-340 vectors, including all 10 adversarial rejections</td></tr>
-        <tr><td>Transaction id</td><td>tagged double-SHA256</td><td>Excludes all witness data — non-malleable from genesis</td></tr>
-        <tr><td>Channel CSV delay</td><td><code>144 blocks</code></td><td>≈ 1 day</td></tr>
-        <tr><td>Channel dust limit</td><td><code>546 zaps</code></td><td>Outputs below this are dropped, per BOLT 3</td></tr>
-        <tr><td>Onion packet</td><td><code>1366 bytes</code></td><td>20 hop slots × 65 B + version + ephemeral + HMAC</td></tr>
+        <tr><td data-i18n="params.td1">Ticker</td><td><code>DECKX</code></td><td data-i18n="params.td3">Smallest unit <code>zap</code>, 10⁸ per DECKX</td></tr>
+        <tr><td data-i18n="params.td4">Max supply</td><td><code>21 000 000 DECKX</code></td><td data-i18n="params.td6">2 100 000 000 000 000 zaps — enforced at consensus, not just by arithmetic</td></tr>
+        <tr><td data-i18n="params.td7">Halving interval</td><td><code>52 560 blocks</code></td><td data-i18n="params.td9">Exactly 365 days at 600-second spacing</td></tr>
+        <tr><td data-i18n="params.td10">Initial subsidy</td><td><code>199.77168949 DECKX</code></td><td data-i18n="params.td12">Derived: <code>MAX_SUPPLY / (2 × 52 560)</code>. Not a chosen constant</td></tr>
+        <tr><td data-i18n="params.td13">Terminal height</td><td><code>1 839 599</code></td><td data-i18n="params.td14">Issuance reaches zero after 35 halvings ≈ 35 years</td></tr>
+        <tr><td data-i18n="params.td15">Target spacing</td><td><code>600 s</code></td><td data-i18n="params.td17">Block propagation ≪ block interval</td></tr>
+        <tr><td data-i18n="params.td18">Retarget interval</td><td><code>2016 blocks</code></td><td data-i18n="params.td20">Clamped to a 4× move per period in either direction</td></tr>
+        <tr><td data-i18n="params.td21">Genesis difficulty</td><td><code>0x1f00ffff</code></td><td data-i18n="params.td22">≈ 2⁻¹⁶, about 65 536 expected attempts — auditable on a laptop</td></tr>
+        <tr><td data-i18n="params.td23">Coinbase maturity</td><td><code>100 blocks</code></td><td data-i18n="params.td25">Reorg safety; enforced, not configurable</td></tr>
+        <tr><td data-i18n="params.td26">Max block transactions</td><td><code>4096</code></td><td data-i18n="params.td27">Plus a 30 000 000 block gas ceiling</td></tr>
+        <tr><td data-i18n="params.td28">Future drift limit</td><td><code>2 hours</code></td><td data-i18n="params.td30">Blocks must also exceed the median time of the last 11</td></tr>
+        <tr><td data-i18n="params.td31">Address format</td><td data-i18n="params.td32"><code>bech32m</code>, HRP <code>dxc</code></td><td data-i18n="params.td33">Version 0 = key, version 1 = contract</td></tr>
+        <tr><td data-i18n="params.td34">Signature scheme</td><td><code>BIP-340 Schnorr</code></td><td data-i18n="params.td36">64-byte signatures over 32-byte x-only keys. Verified against the 15 official BIP-340 vectors, including all 10 adversarial rejections</td></tr>
+        <tr><td data-i18n="params.td37">Transaction id</td><td data-i18n="params.td38">tagged double-SHA256</td><td data-i18n="params.td39">Excludes all witness data — non-malleable from genesis</td></tr>
+        <tr><td data-i18n="params.td40">Channel CSV delay</td><td><code>144 blocks</code></td><td data-i18n="params.td42">≈ 1 day</td></tr>
+        <tr><td data-i18n="params.td43">Channel dust limit</td><td><code>546 zaps</code></td><td data-i18n="params.td45">Outputs below this are dropped, per BOLT 3</td></tr>
+        <tr><td data-i18n="params.td46">Onion packet</td><td><code>1366 bytes</code></td><td data-i18n="params.td48">20 hop slots × 65 B + version + ephemeral + HMAC</td></tr>
       </tbody>
     </table>
   </div>
@@ -883,17 +883,17 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 <section id="run" class="section">
   <div class="section-head">
     <span class="section-index">13</span>
-    <h2>Run it yourself</h2>
-    <p class="section-sub">Node 22.18+ (native TypeScript type stripping). No build step, no bundler, three dependencies.</p>
+    <h2 data-i18n="run.h21">Run it yourself</h2>
+    <p data-i18n="run.p1" class="section-sub">Node 22.18+ (native TypeScript type stripping). No build step, no bundler, five dependencies.</p>
   </div>
 
   <div class="code-block">
-    <div class="code-head"><span>shell</span><button class="copy-btn" data-copy="#run-cmds">copy</button></div>
+    <div class="code-head"><span>shell</span><button data-i18n="run.button1" class="copy-btn" data-copy="#run-cmds">copy</button></div>
 <pre id="run-cmds"><code>git clone https://github.com/xyb3rpunq/deckxcoin.git
 cd deckxcoin/chain
 npm install
 
-npm test              <span class="c"># 275 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
+npm test              <span class="c"># 313 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
 node src/cli.ts genesis    <span class="c"># mine and verify the genesis block</span>
 node src/cli.ts verify     <span class="c"># prove genesis is reproducible</span>
 node src/cli.ts volt       <span class="c"># routed off-chain payment across two channels</span>
@@ -902,16 +902,16 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
 
   <div class="cards three">
     <article class="card">
-      <h3>Three dependencies</h3>
-      <p><code>@noble/hashes</code>, <code>@noble/secp256k1</code>, <code>@scure/base</code>. Audited, minimal, no transitive tree.</p>
+      <h3 data-i18n="run.h31">Five dependencies</h3>
+      <p data-i18n="run.p2"><code>@noble/curves</code>, <code>@noble/hashes</code>, <code>@scure/base</code>, <code>@scure/bip32</code>, <code>@scure/bip39</code>. Audited, minimal, no transitive tree.</p>
     </article>
     <article class="card">
-      <h3>No build step</h3>
-      <p>Node strips the types and runs the <code>.ts</code> files directly. What you read is what executes.</p>
+      <h3 data-i18n="run.h32">No build step</h3>
+      <p data-i18n="run.p3">Node strips the types and runs the <code>.ts</code> files directly. What you read is what executes.</p>
     </article>
     <article class="card">
-      <h3>Deterministic</h3>
-      <p>Every key in the tests and the demo derives from a documented seed phrase. Re-run anything, get the same bytes.</p>
+      <h3 data-i18n="run.h33">Deterministic</h3>
+      <p data-i18n="run.p4">Every key in the tests and the demo derives from a documented seed phrase. Re-run anything, get the same bytes.</p>
     </article>
   </div>
 </section>
@@ -920,34 +920,34 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
 <section id="audit" class="section alt">
   <div class="section-head">
     <span class="section-index">14</span>
-    <h2>Honest limitations</h2>
-    <p class="section-sub">What this is not. Read this before you put anything of value near it.</p>
+    <h2 data-i18n="audit.h21">Honest limitations</h2>
+    <p data-i18n="audit.p1" class="section-sub">What this is not. Read this before you put anything of value near it.</p>
   </div>
 
   <div class="warn-box">
-    <p><strong>DeckxCoin is a reference implementation and a teaching artefact. It has not been audited, it has no live network, and it must not be used to custody value.</strong></p>
+    <p data-i18n="audit.p2"><strong>DeckxCoin is a reference implementation and a teaching artefact. It has not been audited, no public network is running, and it must not be used to custody value.</strong></p>
   </div>
 
   <div class="table-wrap">
     <table class="spec">
-      <thead><tr><th>Area</th><th>Status</th><th>What is missing</th></tr></thead>
+      <thead><tr><th data-i18n="audit.th1">Area</th><th data-i18n="audit.th2">Status</th><th data-i18n="audit.th3">What is missing</th></tr></thead>
       <tbody>
-        <tr><td>P2P networking</td><td class="todo">absent</td><td>No gossip, no peer discovery, no mempool relay. The chain is a library; there is no daemon.</td></tr>
-        <tr><td>Reorg handling</td><td class="partial">partial</td><td>Chainwork is tracked and fork choice is defined, but there is no orphan pool and no state rollback across a reorg.</td></tr>
-        <tr><td>Persistence</td><td class="todo">absent</td><td>State lives in memory. There is a snapshot/restore path but no on-disk database.</td></tr>
-        <tr><td>Signature scheme</td><td class="done">implemented</td><td>BIP-340 Schnorr, with real batch verification over Pippenger multi-scalar multiplication — 2.6× faster than one-by-one at 1024 signatures.</td></tr>
-        <tr><td>Mining</td><td class="partial">reference only</td><td>Single-threaded, no work distribution, no stratum. It exists to prove the header is honest, not to compete.</td></tr>
-        <tr><td>Gas refunds</td><td class="partial">simplified</td><td>The fee must cover <code>gasUsed × gasPrice</code>; unused reservation becomes a miner tip rather than being refunded to a change output.</td></tr>
-        <tr><td>Volt watchtowers</td><td class="todo">absent</td><td>The penalty transaction is implemented and tested, but somebody has to be online to broadcast it.</td></tr>
-        <tr><td>Multi-part payments</td><td class="todo">absent</td><td>A payment larger than any single channel's liquidity fails rather than splitting.</td></tr>
-        <tr><td>Wallet / HD keys</td><td class="done">implemented</td><td>BIP-39 mnemonic with checksum, BIP-32 derivation, gap-limit discovery, coin selection and change handling. No encrypted keystore at rest.</td></tr>
-        <tr><td>Quantum resistance</td><td class="todo">absent</td><td>secp256k1 like everyone else. Bitcoin's own migration is a multi-year programme that has not properly started.</td></tr>
+        <tr><td data-i18n="audit.td1">P2P networking</td><td data-i18n="audit.td2" class="todo">implemented</td><td data-i18n="audit.td3">Framed wire protocol over TCP, encrypted and identity-bound, with gossip, headers-first sync, compact block relay and mempool exchange. No DNS seeds are configured, because there are no public nodes to list yet, and no NAT traversal — an inbound-reachable node needs a forwarded port.</td></tr>
+        <tr><td data-i18n="audit.td4">Reorg handling</td><td data-i18n="audit.td5" class="partial">implemented</td><td data-i18n="audit.td6">Undo records per block, most-work fork choice, losing branches retained, and the restored state root checked against the parent's committed root. A reorg deeper than the undo window is refused rather than attempted with missing data.</td></tr>
+        <tr><td data-i18n="audit.td7">Persistence</td><td data-i18n="audit.td8" class="todo">implemented</td><td data-i18n="audit.td9">WAL-mode SQLite via <code>node:sqlite</code>, one transaction per block. No pruning: the node keeps every block forever, which is fine for a testnet and would not be for a chain with years of history.</td></tr>
+        <tr><td data-i18n="audit.td10">Signature scheme</td><td data-i18n="audit.td11" class="done">implemented</td><td data-i18n="audit.td12">BIP-340 Schnorr, with real batch verification over Pippenger multi-scalar multiplication — 2.6× faster than one-by-one at 1024 signatures.</td></tr>
+        <tr><td data-i18n="audit.td13">Mining</td><td data-i18n="audit.td14" class="partial">reference only</td><td data-i18n="audit.td15">Single-threaded, no work distribution, no stratum. It exists to prove the header is honest, not to compete.</td></tr>
+        <tr><td data-i18n="audit.td16">Gas refunds</td><td data-i18n="audit.td17" class="partial">simplified</td><td data-i18n="audit.td18">The fee must cover <code>gasUsed × gasPrice</code>; unused reservation becomes a miner tip rather than being refunded to a change output.</td></tr>
+        <tr><td data-i18n="audit.td19">Volt watchtowers</td><td data-i18n="audit.td20" class="todo">implemented</td><td data-i18n="audit.td21">Encrypted blobs the tower cannot read, fee ladders with escalation, signed receipts and retention audits. A single tower is still a single point of failure — there is no reputation network and no multi-tower redundancy.</td></tr>
+        <tr><td data-i18n="audit.td22">Multi-part payments</td><td data-i18n="audit.td23" class="todo">absent</td><td data-i18n="audit.td24">A payment larger than any single channel's liquidity fails rather than splitting.</td></tr>
+        <tr><td data-i18n="audit.td25">Wallet / HD keys</td><td data-i18n="audit.td26" class="done">implemented</td><td data-i18n="audit.td27">BIP-39 mnemonic with checksum, BIP-32 derivation, gap-limit discovery, coin selection and change handling. No encrypted keystore at rest.</td></tr>
+        <tr><td data-i18n="audit.td28">Quantum resistance</td><td data-i18n="audit.td29" class="todo">absent</td><td data-i18n="audit.td30">secp256k1 like everyone else. Bitcoin's own migration is a multi-year programme that has not properly started.</td></tr>
       </tbody>
     </table>
   </div>
 
   <div class="prose">
-    <p>
+    <p data-i18n="audit.p3">
       The test suite is the specification. If a claim on this page is not backed by a test in
       <code>chain/test/</code>, treat it as marketing and discount it accordingly. Every "implemented"
       row above corresponds to at least one assertion that runs in CI.
@@ -961,21 +961,23 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
   <div class="footer-inner">
     <div>
       <p class="footer-brand">DECKX<span class="accent">COIN</span></p>
-      <p class="footer-note">Decky Decentralized Coin Exchange · reference implementation · MIT licensed</p>
-      <p class="footer-note dim" id="footer-generated">chain data generated —</p>
+      <p data-i18n="footer.p2" class="footer-note">Decky Decentralized Coin Exchange · reference implementation · MIT licensed</p>
+      <p class="footer-note dim"><span data-i18n="footer.p3">chain data generated</span> <span id="footer-generated">—</span></p>
     </div>
     <nav class="footer-nav">
-      <a href="https://github.com/xyb3rpunq/deckxcoin" rel="noopener">Source</a>
-      <a href="https://github.com/xyb3rpunq/deckxcoin/tree/main/chain/test" rel="noopener">Tests</a>
-      <a href="https://github.com/xyb3rpunq/deckxcoin/blob/main/docs/DESIGN.md" rel="noopener">Design notes</a>
-      <a href="https://bitcoin.org/bitcoin.pdf" rel="noopener">Bitcoin whitepaper</a>
-      <a href="https://ethereum.org/roadmap/glamsterdam/" rel="noopener">Ethereum roadmap</a>
-      <a href="https://github.com/lightning/bolts" rel="noopener">Lightning BOLTs</a>
+      <a data-i18n="fnav.a1" href="https://github.com/xyb3rpunq/deckxcoin" rel="noopener">Source</a>
+      <a data-i18n="fnav.a2" href="https://github.com/xyb3rpunq/deckxcoin/tree/main/chain/test" rel="noopener">Tests</a>
+      <a data-i18n="fnav.a3" href="https://github.com/xyb3rpunq/deckxcoin/blob/main/docs/DESIGN.md" rel="noopener">Design notes</a>
+      <a data-i18n="fnav.a4" href="https://bitcoin.org/bitcoin.pdf" rel="noopener">Bitcoin whitepaper</a>
+      <a data-i18n="fnav.a5" href="https://ethereum.org/roadmap/glamsterdam/" rel="noopener">Ethereum roadmap</a>
+      <a data-i18n="fnav.a6" href="https://github.com/lightning/bolts" rel="noopener">Lightning BOLTs</a>
     </nav>
   </div>
-  <p class="footer-warn">Not audited. No live network. Not financial advice, and not a product you can buy.</p>
+  <p data-i18n="footer.p4" class="footer-warn">Not audited. No public network running. Not financial advice, and not a product you can buy.</p>
 </footer>
 
+<script src="i18n.js"></script>
+<script src="live.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

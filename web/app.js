@@ -521,8 +521,20 @@ async function boot() {
     paintChannels(data);
     paintPayment(data);
 
+    // Only the value. The label beside it carries data-i18n, and writing both
+    // here would put the sentence back under i18n's control — which repaints
+    // from its dictionary and would wipe the date on the next language switch.
     const gen = $('#footer-generated');
-    if (gen) gen.textContent = `chain data generated ${data.generatedAt} · exporter v${data.generatorVersion}`;
+    if (gen) gen.textContent = `${data.generatedAt} · exporter v${data.generatorVersion}`;
+
+    /*
+     * The snapshot is painted first and always. Only then does the page try a
+     * live node, and it overwrites the chain figures only once one has
+     * answered and proved it is on this chain. That ordering means a slow or
+     * absent gateway costs the reader nothing — the page is already complete
+     * when the attempt starts.
+     */
+    if (window.live) window.live.start(data);
   } catch (err) {
     console.error('DeckxCoin explorer:', err);
     paintError(err.message);
