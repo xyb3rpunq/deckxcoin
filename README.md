@@ -285,6 +285,56 @@ returned. A wallet that hands you a transaction the network will reject has done
 
 ---
 
+## 🔑 Using a wallet
+
+`src/wallet-cli.ts` is the wallet. It holds keys and builds transactions; the node holds the chain.
+
+```bash
+node src/wallet-cli.ts new --wallet ./alice.key      # 24 words, printed once
+node src/wallet-cli.ts address --wallet ./alice.key  # a fresh receiving address
+node src/wallet-cli.ts balance --wallet ./alice.key
+node src/wallet-cli.ts send --wallet ./alice.key --to dxc1q… --amount 12.5
+node src/wallet-cli.ts restore --words "…" --wallet ./recovered.key
+```
+
+<details>
+<summary><b>Send coins between two wallets, start to finish</b></summary>
+
+```bash
+cd chain
+
+# 1 — a node to talk to
+node src/deckxd.ts --network regtest --datadir ./data/regtest --rpcport 29332 &
+
+# 2 — two wallets
+node src/wallet-cli.ts new --wallet ./alice.key
+node src/wallet-cli.ts new --wallet ./bob.key
+
+# 3 — give Alice coins. 101 blocks: one to pay her, 100 for coinbase maturity
+ALICE=$(node src/wallet-cli.ts address --wallet ./alice.key --offline)
+curl -s localhost:29332 -d "{\"method\":\"generate\",\"params\":{\"count\":101,\"address\":\"$ALICE\"}}"
+
+# 4 — Alice pays Bob
+BOB=$(node src/wallet-cli.ts address --wallet ./bob.key --offline)
+node src/wallet-cli.ts send --wallet ./alice.key --to "$BOB" --amount 12.5 --dry-run   # look first
+node src/wallet-cli.ts send --wallet ./alice.key --to "$BOB" --amount 12.5
+
+# 5 — confirm it and look
+curl -s localhost:29332 -d "{\"method\":\"generate\",\"params\":{\"count\":1,\"address\":\"$ALICE\"}}"
+node src/wallet-cli.ts balance --wallet ./bob.key
+```
+
+`--dry-run` builds and signs the transaction, shows the fee and where the change goes, and
+broadcasts nothing. Worth using the first few times: the change output is where wallets lose money.
+
+</details>
+
+**There is no encrypted keystore.** The key file is twenty-four words at mode 0600, and anyone who
+can read it can spend the coins. That is a real gap, listed as one in
+[Honest limitations](#️-honest-limitations) rather than implied away.
+
+---
+
 ## 💰 Monetary policy
 
 **21,000,000 DECKX. Halving every 365 days.** At 600-second spacing that is exactly
@@ -485,6 +535,7 @@ chain/
 │  ├─ scenario.ts     the 12-step reference scenario
 │  ├─ cli.ts          command line interface
 │  ├─ deckxd.ts       the node daemon
+│  ├─ wallet-cli.ts   the command-line wallet — new · balance · send · restore
 │  ├─ contracts/      the standard covenant library + authoring toolkit
 │  ├─ store/
 │  │  └─ sqlite.ts    blocks · UTXOs · contracts · undo records · peer book

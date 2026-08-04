@@ -31,7 +31,7 @@ import { Faucet, FaucetLedger, DEFAULT_POLICY } from './node/faucet.ts';
 import { HdWallet, generateMnemonic } from './wallet/hd.ts';
 import { Wallet } from './wallet/wallet.ts';
 import { networkByName } from './params.ts';
-import { isValidAddress, normaliseAddress } from './crypto.ts';
+import { isValidAddress, normaliseAddress, toHex } from './crypto.ts';
 import { formatDeckx, ZAPS_PER_DECKX } from './tx.ts';
 
 interface Args {
@@ -243,7 +243,15 @@ async function main(): Promise<number> {
    * see it rather than buried in a datadir.
    */
   if (args.one('host', '127.0.0.1') !== '127.0.0.1') {
-    console.log(`  ${dim('publish this:')} ${bold(`<your-host>:${port}#${node.identity.address}`)}\n`);
+    /*
+     * The hex public key, not the bech32 address. `--connect` parses
+     * `host:port#<64 lowercase hex>` — see `parsePeerAddress` — and the wire
+     * proves identity with `toHex(publicKey)`. Publishing the address would
+     * hand people a string their own node refuses to parse.
+     */
+    console.log(
+      `  ${dim('publish this:')} ${bold(`<your-host>:${port}#${toHex(node.identity.publicKey)}`)}\n`,
+    );
   }
 
   /* ── mining ──────────────────────────────────────────────────────── */
@@ -281,11 +289,31 @@ async function main(): Promise<number> {
 
   /* ── shutdown ────────────────────────────────────────────────────── */
 
+  /*
+   * The one handle that keeps the daemon running.
+   *
+   * Every other handle in the process is deliberately unref'd — the P2P
+   * listener, the RPC server, the dial timer, the status line — so that tests
+   * embedding these components do not hang waiting for them. That leaves
+   * nothing holding the event loop open, and `await new Promise(() => {})`
+   * holds nothing either: a promise that never settles is not a libuv handle,
+   * so Node considers the loop empty and exits.
+   *
+   * The symptom was the worst kind: the daemon printed its banner and exited
+   * with status 0, looking exactly like a successful start. Under systemd it
+   * would have restarted every five seconds forever.
+   *
+   * So the daemon owns its own lifetime explicitly, with a ref'd timer that
+   * shutdown clears.
+   */
+  const keepAlive = setInterval(() => {}, 1 << 30);
+
   let shuttingDown = false;
   const shutdown = async (signal: string) => {
     if (shuttingDown) return;
     shuttingDown = true;
     console.log(`\n${stamp()} ${dim(signal)} — closing`);
+    clearInterval(keepAlive);
     if (miner) clearInterval(miner);
     if (status) clearInterval(status);
     if (gateway) await gateway.stop();
@@ -296,8 +324,6 @@ async function main(): Promise<number> {
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
 
-  // Hold the process open; every timer above is unref'd on purpose so that
-  // this interval is the single thing keeping the node alive.
   await new Promise(() => {});
   return 0;
 }

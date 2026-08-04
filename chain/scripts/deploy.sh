@@ -382,7 +382,7 @@ fi
 
 PUBLIC_IP="$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || echo 'YOUR-HOST')"
 IDENTITY="$(journalctl -u "$SERVICE_NAME" -n 200 --no-pager 2>/dev/null \
-  | grep -o 'dxc1[a-z0-9]\{38,\}' | tail -1 || true)"
+  | grep -oE '#[0-9a-f]{64}' | tail -1 | tr -d '#' || true)"
 
 printf '\n%sdeckxd is running.%s\n\n' "$BOLD" "$OFF"
 printf '  %-14s %s\n' "network" "$NETWORK"
@@ -399,7 +399,7 @@ if [ -n "$IDENTITY" ]; then
   info "without the identity, a newcomer's first connection is trust-on-first-use"
   info "and an attacker on their path at that moment is not detected"
 else
-  info "find the identity to publish with: journalctl -u ${SERVICE_NAME} | grep dxc1"
+  info "find the identity to publish with: journalctl -u ${SERVICE_NAME} | grep 'publish this'"
 fi
 printf '\n'
 

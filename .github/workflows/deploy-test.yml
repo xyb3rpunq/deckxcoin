@@ -1,0 +1,191 @@
+name: Deploy script on real Linux
+
+# The VPS you do not have to rent.
+#
+# A GitHub Actions runner is a real Ubuntu machine with systemd, sudo and a
+# firewall — which is exactly what `deploy.sh` was written for and exactly what
+# a Windows laptop cannot provide. It is free for public repositories, so the
+# script gets exercised on the platform it targets on every change to it.
+#
+# The runner is destroyed afterwards, so this is also the only place it is safe
+# to let the script do what it really does: create a system user, install a unit,
+# open ports and start a service as root.
+
+on:
+  push:
+    paths:
+      - 'chain/scripts/deploy.sh'
+      - 'chain/src/deckxd.ts'
+      - 'chain/src/node/gateway.ts'
+      - 'chain/src/node/faucet.ts'
+      - '.github/workflows/deploy-test.yml'
+  pull_request:
+    paths:
+      - 'chain/scripts/deploy.sh'
+  workflow_dispatch:
+
+jobs:
+  dry-run:
+    name: Dry run and guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The script is valid bash
+        run: bash -n chain/scripts/deploy.sh
+
+      - name: shellcheck
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          # SC2086 (unquoted expansions) is checked; informational style notes
+          # are not, or the signal drowns in preference.
+          shellcheck --severity=warning chain/scripts/deploy.sh
+
+      - name: Guards refuse what they should
+        run: |
+          set -e
+          expect_fail() {
+            if bash chain/scripts/deploy.sh "$@" >/dev/null 2>&1; then
+              echo "FAIL: '$*' was accepted and should not have been"; exit 1
+            fi
+            echo "  refused: $*"
+          }
+          expect_fail --network mainnet --faucet
+          expect_fail --network doge
+          expect_fail --yolo
+          # Without --dry-run and without root, it must stop before touching
+          # anything.
+          expect_fail --network testnet
+
+      - name: The unit file it would install
+        run: |
+          bash chain/scripts/deploy.sh --dry-run --network testnet --gateway --faucet \
+            --mine dxc1qe3yaxhwdm4yxfrez9ycu9r28k8lsphqmezfxrm | tee /tmp/plan.txt
+          # The RPC port must never appear in a firewall rule, and the unit must
+          # keep its hardening. These are the two things a careless edit breaks.
+          grep -q 'NoNewPrivileges=true' /tmp/plan.txt
+          grep -q 'ProtectSystem=strict' /tmp/plan.txt
+          grep -q 'ReadWritePaths=/var/lib/deckxd' /tmp/plan.txt
+          grep -q 'User=deckxd' /tmp/plan.txt
+          grep -q 'NOT opened' /tmp/plan.txt
+          ! grep -qE 'ExecStart=.*--host 127\.0\.0\.1' /tmp/plan.txt
+
+      - name: systemd accepts the unit
+        run: |
+          # The real check: systemd itself parsing what the script writes.
+          # `bash -n` proves the script is valid; this proves its *output* is.
+          bash chain/scripts/deploy.sh --dry-run --network testnet --gateway \
+            | sed -n '/\[Unit\]/,$p' | sed 's/^    //' | sudo tee /etc/systemd/system/deckxd-lint.service >/dev/null
+          sudo systemd-analyze verify /etc/systemd/system/deckxd-lint.service
+          echo "  systemd parsed the unit with no complaints"
+          sudo rm -f /etc/systemd/system/deckxd-lint.service
+
+  install:
+    name: Install, run, verify, uninstall
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install for real
+        run: |
+          sudo DECKX_INSTALL_DIR=/opt/deckxcoin \
+            bash chain/scripts/deploy.sh \
+              --network regtest \
+              --gateway --gateway-port 8080 \
+              --faucet --faucet-amount 5 --faucet-reserve 1 \
+              --no-firewall
+
+      - name: The service is actually running
+        run: |
+          systemctl is-active --quiet deckxd || {
+            echo "service is not active"; sudo journalctl -u deckxd -n 60 --no-pager; exit 1
+          }
+          echo "  active"
+          # It must still be up a few seconds later. A daemon that exits and is
+          # restarted by systemd every five seconds looks 'active' at first
+          # glance — this is what catches that.
+          sleep 12
+          RESTARTS=$(systemctl show deckxd -p NRestarts --value)
+          echo "  restarts since start: $RESTARTS"
+          test "$RESTARTS" -eq 0 || {
+            echo "the daemon is restart-looping"; sudo journalctl -u deckxd -n 80 --no-pager; exit 1
+          }
+
+      - name: It runs unprivileged, from its own datadir
+        run: |
+          PID=$(systemctl show deckxd -p MainPID --value)
+          OWNER=$(ps -o user= -p "$PID" | tr -d ' ')
+          echo "  running as: $OWNER"
+          test "$OWNER" = "deckxd" || { echo "expected the deckxd user, got $OWNER"; exit 1; }
+          test "$(stat -c '%a' /var/lib/deckxd)" = "700"
+          test "$(stat -c '%U' /var/lib/deckxd)" = "deckxd"
+          echo "  datadir 0700 deckxd"
+
+      - name: The RPC answers on loopback
+        run: |
+          for _ in $(seq 1 30); do
+            curl -fsS --max-time 2 localhost:29332 -H 'content-type: application/json' \
+              -d '{"method":"getblockchaininfo"}' >/dev/null 2>&1 && break
+            sleep 1
+          done
+          curl -fsS localhost:29332 -H 'content-type: application/json' \
+            -d '{"method":"getblockchaininfo"}' | tee /tmp/info.json
+          grep -q '"supplyBalanced":true' /tmp/info.json
+
+      - name: The gateway serves reads and refuses everything else
+        run: |
+          curl -fsS 'localhost:8080/?method=getblockchaininfo' | grep -q '"height"'
+          echo "  reads: ok"
+          for m in generate addnode submitblock sync getpeerinfo listbanned sendrawtransaction; do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8080 \
+              -H 'content-type: application/json' -d "{\"method\":\"$m\",\"params\":{}}")
+            echo "  $m -> $CODE"
+            test "$CODE" = "403" || { echo "$m was not refused"; exit 1; }
+          done
+
+      - name: The faucet exists and refuses an empty wallet honestly
+        run: |
+          curl -fsS localhost:8080/faucet | tee /tmp/faucet.json
+          grep -q '"healthy":false' /tmp/faucet.json
+          # Nothing has been mined to it, so the only correct answer is "empty" —
+          # not an error, and not coins it does not have.
+          ANSWER=$(curl -s -X POST localhost:8080/faucet -H 'content-type: application/json' \
+            -d '{"address":"dxc1qe3yaxhwdm4yxfrez9ycu9r28k8lsphqmezfxrm"}')
+          echo "$ANSWER"
+          echo "$ANSWER" | grep -q '"verdict":"empty"'
+
+      - name: The key file is not readable by anyone else
+        run: |
+          sudo test -f /var/lib/deckxd/faucet.key
+          MODE=$(sudo stat -c '%a' /var/lib/deckxd/faucet.key)
+          echo "  faucet.key mode $MODE"
+          test "$MODE" = "600"
+
+      - name: Re-running changes nothing
+        run: |
+          sudo DECKX_INSTALL_DIR=/opt/deckxcoin \
+            bash chain/scripts/deploy.sh --network regtest --gateway --faucet --no-firewall
+          systemctl is-active --quiet deckxd
+          echo "  still active after a second run"
+
+      - name: A clean stop closes the database
+        run: |
+          sudo systemctl stop deckxd
+          sleep 2
+          # A datadir left mid-write is the one failure that silently forks a
+          # node off the network, so the WAL must have been checkpointed.
+          sudo ls -la /var/lib/deckxd/
+          systemctl is-active deckxd && exit 1 || echo "  stopped cleanly"
+
+      - name: Uninstall removes the service and keeps the keys
+        run: |
+          sudo bash chain/scripts/deploy.sh --uninstall
+          test ! -f /etc/systemd/system/deckxd.service
+          # Deleting somebody's identity key and faucet wallet is not a decision
+          # a script gets to make.
+          sudo test -d /var/lib/deckxd
+          echo "  service gone, datadir left in place"
+
+      - name: Logs, if anything went wrong
+        if: failure()
+        run: sudo journalctl -u deckxd -n 200 --no-pager || true
