@@ -271,6 +271,17 @@
     if (!node) {
       node = el('div', 'live-banner');
       node.id = 'live-banner';
+      /*
+       * The whole point of this banner is that it changes — from SNAPSHOT to
+       * LIVE, or from LIVE to UNREACHABLE when a node stops answering. Without
+       * a live region those transitions are visible only to people looking at
+       * that part of the page, and silent to everyone else.
+       *
+       * `polite`, not `assertive`: it is status, not an alarm, and it must not
+       * interrupt someone mid-sentence every fifteen seconds.
+       */
+      node.setAttribute('role', 'status');
+      node.setAttribute('aria-live', 'polite');
       const section = document.querySelector('#explorer .section-head');
       if (!section) return null;
       section.appendChild(node);
@@ -318,7 +329,34 @@
     node.appendChild(label);
     node.appendChild(detail);
 
+    markScenarioSections();
     if (state.status === STATUS.LIVE) renderLive();
+  }
+
+  /**
+   * Say which parts of the explorer are *not* live.
+   *
+   * Connecting to a node updates the chain summary and the block list. The
+   * timeline, the genesis detail, the deployed contract and the Volt channels
+   * still come from the bundled scenario — they describe a scripted run, not
+   * whatever the node happens to hold. A banner reading LIVE over all of them
+   * would be the same quiet dishonesty the banner exists to prevent, so each
+   * one says where its numbers came from.
+   */
+  function markScenarioSections() {
+    const live = state.status === STATUS.LIVE;
+    for (const heading of document.querySelectorAll('[data-scenario]')) {
+      let tag = heading.querySelector('.scenario-tag');
+      if (!live) {
+        tag?.remove();
+        continue;
+      }
+      if (!tag) {
+        tag = el('span', 'scenario-tag');
+        heading.appendChild(tag);
+      }
+      tag.textContent = t('live.fromScenario', 'from the bundled scenario');
+    }
   }
 
   const hostOf = (url) => {
@@ -427,7 +465,14 @@
     input.spellcheck = false;
 
     const button = el('button', 'btn primary faucet-btn');
+    button.type = 'button';
+
     const result = el('p', 'faucet-result');
+    // The answer — paid, refused, why — replaces this text after a round trip.
+    // Without a live region, a screen-reader user presses the button and is
+    // told nothing at all.
+    result.setAttribute('role', 'status');
+    result.setAttribute('aria-live', 'polite');
 
     faucetNodes = { title, sub, button, input };
     retranslateFaucet();
@@ -453,6 +498,17 @@
         result.textContent = err.message;
       } finally {
         button.disabled = false;
+      }
+    });
+
+    // Enter submits. A single text field beside a button is a form to everyone
+    // who has ever used one, and requiring the mouse for the last step of a
+    // keyboard-friendly flow is the kind of thing nobody reports and everyone
+    // notices.
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !button.disabled) {
+        event.preventDefault();
+        button.click();
       }
     });
 

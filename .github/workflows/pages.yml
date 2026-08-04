@@ -38,6 +38,40 @@ jobs:
             console.log('genesis', d.genesis.hash, '· blocks', d.blocks.length, '· ok');
           "
 
+      # ── cache busting ────────────────────────────────────────────────
+      #
+      # GitHub Pages serves assets with a long max-age, and index.html with a
+      # short one. Without a version on the asset URLs, a returning visitor
+      # after a deploy gets the *new* HTML and the *old* app.js — a combination
+      # that was never tested and fails in ways nobody can reproduce, because
+      # it depends on what happens to be in that one person's cache.
+      #
+      # Stamping the commit SHA onto every local asset reference makes each
+      # deploy a distinct URL, so a cached copy of the previous one can never
+      # be paired with the new HTML. Done here rather than in the repo so the
+      # source stays free of version noise.
+      - name: Stamp asset URLs with the commit
+        run: |
+          SHA="${GITHUB_SHA::12}"
+          echo "stamping assets with ?v=$SHA"
+          # Local .css/.js/.json references only — external URLs and the PDF
+          # (which is content, not code) are left alone.
+          sed -i -E "s#(\"|')(app\.js|i18n\.js|live\.js|styles\.css)(\"|')#\1\2?v=$SHA\3#g" web/index.html
+          # Any single-quoted occurrence of a data path, not only inline
+          # fetch() calls — live.js holds its URL in a constant. Requiring the
+          # closing quote right after `.json` also makes this idempotent.
+          sed -i -E "s#'(data/chain\.json|data/network\.json|i18n/id\.json)'#'\1?v=$SHA'#g" \
+            web/app.js web/i18n.js web/live.js
+
+          STAMPED=$(grep -c "v=$SHA" web/index.html)
+          FETCHES=$(cat web/app.js web/i18n.js web/live.js | grep -c "v=$SHA" || true)
+          echo "stamped $STAMPED asset tags and $FETCHES data URLs"
+          # Four script/style tags and three data files. If a rename ever makes
+          # one of these miss, the deploy should fail loudly rather than ship a
+          # half-versioned page that caches inconsistently.
+          test "$STAMPED" -eq 4 || { echo "expected 4 stamped asset tags, got $STAMPED"; exit 1; }
+          test "$FETCHES" -eq 3 || { echo "expected 3 stamped data URLs, got $FETCHES"; exit 1; }
+
       - uses: actions/configure-pages@v5
 
       # The site is already static — no build step, nothing to compile.

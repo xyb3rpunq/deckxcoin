@@ -8,7 +8,7 @@
 
 **Bitcoin's UTXO value layer · an Ethereum-style contract layer that holds no balance · a Lightning-style channel network**
 
-[![tests](https://img.shields.io/badge/tests-313%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
+[![tests](https://img.shields.io/badge/tests-331%20passing-00e59a?style=flat-square&labelColor=0c0f18)](chain/test)
 [![node](https://img.shields.io/badge/full%20node-P2P%20%2B%20reorg%20%2B%20SQLite-38d9ff?style=flat-square&labelColor=0c0f18)](#-running-a-node)
 [![supply](https://img.shields.io/badge/supply-21%2C000%2C000%20DECKX-ff2d55?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
 [![halving](https://img.shields.io/badge/halving-every%20365%20days-ffb020?style=flat-square&labelColor=0c0f18)](#-monetary-policy)
@@ -148,9 +148,9 @@ python docs/build-whitepaper.py    # rebuilds docs/DeckxCoin-Whitepaper.pdf
 
 </details>
 
-Three dependencies, all audited and minimal: `@noble/curves`, `@noble/hashes`, `@scure/base`.
-Persistence (`node:sqlite`) and encryption (`node:crypto`) ship with Node, so the full node and
-its encrypted transport add **zero** dependencies.
+Five dependencies, all audited and minimal: `@noble/curves`, `@noble/hashes`, `@scure/base`,
+`@scure/bip32`, `@scure/bip39`. Persistence (`node:sqlite`) and encryption (`node:crypto`) ship
+with Node, so the full node and its encrypted transport add **zero** dependencies.
 
 ---
 
@@ -430,11 +430,15 @@ test/faucet.test.ts       21  four limits, each closing the hole the last one le
                               IPv6 limited by /64 · CONCURRENT REQUESTS THAT WOULD
                               DOUBLE-SPEND · rollback when a broadcast fails ·
                               draining to the reserve
-test/gateway.test.ts      17  a positive allowlist, not a denylist · every dangerous
+test/gateway.test.ts      25  a positive allowlist, not a denylist · every dangerous
                               method refused · cache keyed by method AND params ·
-                              errors never cached · token bucket per client
+                              errors never cached · token bucket per client ·
+                              X-Forwarded-For only when a proxy is declared
+test/address-canonical    10  ONE ADDRESS, ONE STRING — uppercase bech32 refused by
+             .test.ts         consensus · normalised at every place a human types
+                              one · the faucet cooldown survives a shift key
                           ───
-                          313
+                          331
 ```
 
 **The test suite is the specification.** If a claim on the website or in this README is not backed by
@@ -510,7 +514,7 @@ chain/
 │     ├─ invoice.ts     bech32m `lnvolt1…` signed payment requests
 │     ├─ network.ts     nodes · channel lifecycle · end-to-end routed payments
 │     └─ watchtower.ts  encrypted breach blobs the tower cannot read
-├─ test/              313 tests across 18 files
+├─ test/              331 tests across 18 files
 └─ scripts/
    ├─ testnet.ts             launch a local multi-node network
    ├─ deploy.sh              provision a public node on a fresh server

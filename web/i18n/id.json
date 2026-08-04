@@ -1,6 +1,6 @@
 {
  "meta.title": "DeckxCoin — protokol REKT · UTXO Bitcoin + kontrak Ethereum + kanal Volt",
- "meta.description": "DeckxCoin (DECKX): chain referensi yang benar-benar jalan, menggabungkan lapisan UTXO/proof-of-work Bitcoin dengan VM kontrak ala Ethereum, plus Volt — jaringan kanal pembayaran ala Lightning. Blok genesis asli, proof of work asli, 313 test lulus.",
+ "meta.description": "DeckxCoin (DECKX): chain referensi yang benar-benar jalan, menggabungkan lapisan UTXO/proof-of-work Bitcoin dengan VM kontrak ala Ethereum, plus Volt — jaringan kanal pembayaran ala Lightning. Blok genesis asli, proof of work asli, 331 test lulus.",
  "nav.a1": "Tesis",
  "nav.a2": "Bitcoin",
  "nav.a3": "Ethereum",
@@ -23,7 +23,7 @@
  "fnav.a5": "Roadmap Ethereum",
  "fnav.a6": "BOLT Lightning",
  "header.p1": "Decky Decentralized Coin Exchange · implementasi referensi · v0.1.0",
- "header.p2": "Setiap chain yang pernah nge-rug kamu berawal dari whitepaper yang tidak kamu baca. Yang ini mengirimkan <strong>whitepaper, chain, dan test-nya sekaligus</strong> — blok genesis yang <strong>ditambang, bukan di-hardcode</strong>, 313 test yang gagal dengan berisik kalau kriptografinya salah, dan kode sumber yang membawa alasannya di dalam dirinya sendiri.",
+ "header.p2": "Setiap chain yang pernah nge-rug kamu berawal dari whitepaper yang tidak kamu baca. Yang ini mengirimkan <strong>whitepaper, chain, dan test-nya sekaligus</strong> — blok genesis yang <strong>ditambang, bukan di-hardcode</strong>, 331 test yang gagal dengan berisik kalau kriptografinya salah, dan kode sumber yang membawa alasannya di dalam dirinya sendiri.",
  "thesis.h21": "Tesisnya",
  "thesis.p1": "Dua whitepaper, satu chain, dan alasan spesifik kenapa belum ada yang menggabungkannya dengan benar.",
  "thesis.p2": "Bitcoin (Nakamoto, 2008) memecahkan <em>pengurutan tanpa identitas</em>. Ethereum (Buterin, 2013; Wood, 2014) memecahkan <em>transisi state sembarang</em>. Kedua solusi itu benar. Yang secara historis salah adalah penggabungannya, dan bentuk kegagalannya selalu sama: siapa pun yang memasang VM kontrak di atas chain UTXO berakhir dengan salah satu dari dua hal — (a) meninggalkan UTXO demi model akun, yang mengorbankan validasi paralel dan membuat kanal pembayaran jadi canggung, atau (b) mempertahankan UTXO tapi membiarkan kontrak <em>menyimpan dana</em>, yang menciptakan ulang honeypot satu wadah yang sudah dikuras setiap eksploitasi besar di Ethereum.",
@@ -413,5 +413,7 @@
  "live.refuseReserve": "Faucet hampir kosong dan perlu diisi ulang.",
  "live.refuseEmpty": "Faucet kosong.",
  "live.refuseUnknown": "Faucet menolak permintaan ini.",
- "live.minutes": "mnt"
+ "live.minutes": "mnt",
+ "a11y.skip": "Lompat ke konten",
+ "live.fromScenario": "dari skenario bawaan"
 }

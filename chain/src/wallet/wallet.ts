@@ -25,7 +25,7 @@
 import { applyTx } from '../chain.ts';
 import { formatDeckx, serializeTx, signInput, transferTx, txid, ZAPS_PER_DECKX } from '../tx.ts';
 import type { PrevOut, Transaction, TxOutput } from '../tx.ts';
-import { isValidAddress, type Hex } from '../crypto.ts';
+import { isValidAddress, normaliseAddress, type Hex } from '../crypto.ts';
 import type { Utxo, WorldState } from '../state.ts';
 import { COINBASE_MATURITY } from '../state.ts';
 import { CHAIN_CHANGE, CHAIN_RECEIVE, GAP_LIMIT, HdWallet, type DerivedKey } from './hd.ts';
@@ -282,10 +282,17 @@ export class Wallet {
       strategy?: CoinStrategy;
     },
   ): BuildResult {
-    const { state, tipHeight, tipTime, to } = opts;
+    const { state, tipHeight, tipTime } = opts;
     const feeRate = opts.feeRate ?? this.feeRate;
 
-    if (!isValidAddress(to)) return { ok: false, error: `'${to}' is not a valid DeckxCoin address` };
+    /*
+     * Normalised, because this is where a person pastes an address. QR codes
+     * carry the uppercase bech32 form, and consensus only accepts the canonical
+     * lowercase one — so rejecting uppercase here would be technically correct
+     * and useless to the user holding a phone.
+     */
+    const to = normaliseAddress(opts.to);
+    if (!isValidAddress(to)) return { ok: false, error: `'${opts.to}' is not a valid DeckxCoin address` };
     if (!opts.sweep && opts.amount <= 0n) return { ok: false, error: 'amount must be positive' };
     if (feeRate < 0) return { ok: false, error: 'fee rate must not be negative' };
 

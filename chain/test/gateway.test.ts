@@ -15,6 +15,7 @@ import {
   PUBLIC_METHODS,
   RateLimiter,
   ResponseCache,
+  clientAddress,
 } from '../src/node/gateway.ts';
 import { RPC_METHODS } from '../src/node/rpc.ts';
 
@@ -252,4 +253,77 @@ test('idle clients are forgotten', () => {
 
   limiter.prune(1_000_000 + 60_000);
   assert.equal(limiter.size, 0, 'a fully refilled bucket carries no information');
+});
+
+/* ─────────────────────────────────────────────────────── client address ── */
+
+test('without a configured proxy, the forwarded header is ignored', () => {
+  /*
+   * The header is client-supplied. Trusting it unconditionally lets anyone send
+   * a fresh value per request and defeat every limit here for free — the same
+   * failure as having no limits, reached from the other direction.
+   */
+  const forged = clientAddress('203.0.113.5', '9.9.9.9', 0);
+  assert.equal(forged, '203.0.113.5', 'the socket address is the only thing we observed');
+});
+
+test('behind one proxy, the client is the address that proxy saw', () => {
+  /*
+   * The failure this fixes: behind nginx every request arrives from 127.0.0.1,
+   * so one bucket serves the whole internet and the faucet's per-IP cooldown
+   * becomes a global one — the first person to ask locks out everybody else.
+   */
+  const client = clientAddress('127.0.0.1', '198.51.100.7', 1);
+  assert.equal(client, '198.51.100.7');
+});
+
+test('a client cannot prepend a fake hop to escape its bucket', () => {
+  // With one real proxy, only the right-most entry was observed by something we
+  // trust. Everything left of it is whatever the client chose to claim.
+  const a = clientAddress('127.0.0.1', '1.1.1.1, 198.51.100.7', 1);
+  const b = clientAddress('127.0.0.1', '2.2.2.2, 198.51.100.7', 1);
+  assert.equal(a, '198.51.100.7');
+  assert.equal(b, a, 'forged left-hand entries must not create separate buckets');
+});
+
+test('two real proxies means reaching two hops back', () => {
+  const client = clientAddress('127.0.0.1', '203.0.113.9, 10.0.0.2, 10.0.0.3', 2);
+  assert.equal(client, '10.0.0.2');
+});
+
+test('a truncated forwarded chain does not read past the start', () => {
+  // Claiming more proxies than actually appear must clamp, not return undefined.
+  const client = clientAddress('127.0.0.1', '198.51.100.7', 5);
+  assert.equal(client, '198.51.100.7');
+});
+
+test('an empty forwarded header falls back to the socket', () => {
+  assert.equal(clientAddress('203.0.113.5', '', 1), '203.0.113.5');
+  assert.equal(clientAddress('203.0.113.5', '   ,  ', 1), '203.0.113.5');
+  assert.equal(clientAddress('203.0.113.5', undefined, 1), '203.0.113.5');
+});
+
+test('forwarded IPv6 clients are still collapsed to their /64', () => {
+  const a = clientAddress('127.0.0.1', '2001:db8:1:2:aaaa::1', 1);
+  const b = clientAddress('127.0.0.1', '2001:db8:1:2:bbbb::9', 1);
+  assert.equal(a, b, 'one subscriber, one bucket');
+});
+
+/* ─────────────────────────────────────────────────── parameter coercion ── */
+
+test('a numeric-looking hash is not mangled into a float', async () => {
+  /*
+   * Query strings arrive as strings, and `height` genuinely needs to be a
+   * number. But a 64-character txid that happens to be all digits is far past
+   * Number.MAX_SAFE_INTEGER, and coercing it silently destroys every digit
+   * after the seventeenth.
+   */
+  const { gateway, calls } = rigGateway();
+  const digits = '1'.repeat(64);
+
+  await gateway.rpc('gettransaction', { txid: digits }, 'x');
+  assert.equal(calls[0].params.txid, digits, 'the hash must survive as a string');
+
+  await gateway.rpc('getblockhash', { height: '42' }, 'x');
+  assert.equal(calls[1].params.height, '42', 'direct calls pass values through unchanged');
 });

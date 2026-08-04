@@ -31,6 +31,8 @@ import {
   contractAddress,
   fromHex,
   isContractAddress,
+  canonicalAddress,
+  isCanonicalAddress,
   isValidAddress,
   PUBKEY_BYTES,
   sha256 as sha256Bytes,
@@ -328,7 +330,20 @@ export function checkTx(tx: Transaction, prevOuts: readonly PrevOut[]): TxCheck 
     }
     if (value < 0n) return bad('negative output value');
     if (value > MAX_MONEY) return bad('output exceeds max money');
-    if (!isValidAddress(out.address)) return bad(`invalid output address ${out.address}`);
+    /*
+     * Canonical, not merely valid. Addresses are the keys of the UTXO set and
+     * the state root commits to them as strings, so accepting both `dxc1q…` and
+     * `DXC1Q…` would put one address in the set under two keys — and a payment
+     * to the second spelling is invisible to the wallet that owns it. See
+     * `canonicalAddress` for the full reasoning.
+     */
+    if (!isCanonicalAddress(out.address)) {
+      return bad(
+        isValidAddress(out.address)
+          ? `output address ${out.address} is not canonically encoded — use ${canonicalAddress(out.address)}`
+          : `invalid output address ${out.address}`,
+      );
+    }
     outputSum += value;
     if (outputSum > MAX_MONEY) return bad('output sum exceeds max money');
   }
@@ -466,7 +481,22 @@ export function checkTx(tx: Transaction, prevOuts: readonly PrevOut[]): TxCheck 
       return bad(`fee ${fee} cannot cover gasLimit*gasPrice ${maxGasCost}`);
     }
     if (tx.kind === TX_KIND.DEPLOY && !c.code) return bad('deploy transaction has no code');
-    if (tx.kind === TX_KIND.CALL && !c.target) return bad('call transaction has no target');
+    if (tx.kind === TX_KIND.CALL) {
+      if (!c.target) return bad('call transaction has no target');
+      /*
+       * The target is compared against a locked output's address by string
+       * equality (see the covenant rule below), so a non-canonical spelling
+       * would silently fail to match the contract it names — and, for a
+       * contract account, would key a second account under the same hash.
+       */
+      if (!isCanonicalAddress(c.target)) {
+        return bad(
+          isValidAddress(c.target)
+            ? `contract target ${c.target} is not canonically encoded — use ${canonicalAddress(c.target)}`
+            : `invalid contract target ${c.target}`,
+        );
+      }
+    }
   }
 
   return ok(fee);

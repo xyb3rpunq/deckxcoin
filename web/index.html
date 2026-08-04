@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DeckxCoin — REKT protocol · Bitcoin UTXO + Ethereum contracts + Volt channels</title>
-<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 313 passing tests.">
+<meta name="description" content="DeckxCoin (DECKX): a working reference chain that fuses Bitcoin's UTXO/proof-of-work base layer with an Ethereum-style contract VM, plus Volt — a Lightning-style payment channel network. Real genesis block, real proof of work, 331 passing tests.">
 <meta name="theme-color" content="#05060a">
 <meta property="og:title" content="DeckxCoin — REKT protocol">
 <meta property="og:description" content="Bitcoin's UTXO layer, Ethereum's contract layer, Lightning's channel layer. One chain. Mined genesis, not hardcoded.">
@@ -13,6 +13,11 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+
+<!-- First thing in the tab order. Without it a keyboard user traverses the
+     brand, twelve navigation links and the language switch — seventeen stops —
+     before reaching the article, on every single page load. -->
+<a class="skip-link" href="#top" data-i18n="a11y.skip">Skip to content</a>
 
 <div class="scanlines" aria-hidden="true"></div>
 <div class="grid-bg" aria-hidden="true"></div>
@@ -49,14 +54,14 @@
     <p data-i18n="header.p2" class="lede">
       Every chain you have been rugged by started with a whitepaper you did not read.
       This one ships <strong>the whitepaper, the chain, and the tests together</strong> — a genesis
-      block that was <strong>mined, not hard-coded</strong>, 313 tests that fail loudly when the
+      block that was <strong>mined, not hard-coded</strong>, 331 tests that fail loudly when the
       cryptography is wrong, and source that carries its reasoning inline.
     </p>
 
     <div class="hero-stats" id="hero-stats">
       <div class="stat"><span class="stat-label">genesis hash</span><span class="stat-value mono" data-bind="genesis.hash.short">—</span></div>
       <div class="stat"><span class="stat-label">proof of work</span><span class="stat-value mono" data-bind="genesis.attempts">—</span></div>
-      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">313 / 313</span></div>
+      <div class="stat"><span class="stat-label">tests passing</span><span class="stat-value mono">331 / 331</span></div>
       <div class="stat"><span class="stat-label">supply audit</span><span class="stat-value mono ok" data-bind="supply.status">—</span></div>
     </div>
 
@@ -134,8 +139,8 @@
 
   <div class="table-wrap">
     <table class="spec">
-      <thead>
-        <tr><th>§</th><th data-i18n="bitcoin.th1">Whitepaper claim</th><th>DeckxCoin</th><th data-i18n="bitcoin.th3">Where</th></tr>
+      <th scope="col"ead>
+        <tr><th scope="col">§</th><th scope="col" data-i18n="bitcoin.th1">Whitepaper claim</th><th scope="col">DeckxCoin</th><th scope="col" data-i18n="bitcoin.th3">Where</th></tr>
       </thead>
       <tbody>
         <tr>
@@ -197,7 +202,7 @@
   </div>
 
   <div class="callout">
-    <h4 data-i18n="bitcoin.h41">Where Bitcoin actually stands in 2026 — and why this matters here</h4>
+    <h3 data-i18n="bitcoin.h41" class="callout-title">Where Bitcoin actually stands in 2026 — and why this matters here</h3>
     <p data-i18n="bitcoin.p2">
       Bitcoin's last consensus change was <strong>Taproot, November 2021</strong>. That is the longest
       quiet stretch in its history. The 2026 debate is about <em>covenants</em> — letting an output
@@ -275,7 +280,7 @@
   </div>
 
   <div class="callout">
-    <h4 data-i18n="ethereum.h41">Where Ethereum actually stands in 2026</h4>
+    <h3 data-i18n="ethereum.h41" class="callout-title">Where Ethereum actually stands in 2026</h3>
     <ul class="tight">
       <li data-i18n="ethereum.li1"><strong>Fusaka</strong> activated <strong>December 2025</strong>, shipping PeerDAS to scale rollup data availability.</li>
       <li data-i18n="ethereum.li2"><strong>Glamsterdam</strong> is the next hard fork, targeting <strong>H2 2026</strong>. Its two headline proposals are
@@ -446,7 +451,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   <h3 data-i18n="supply.h32" class="sub-head">Emission schedule</h3>
   <div class="table-wrap">
     <table class="spec" id="schedule-table">
-      <thead><tr><th data-i18n="supply.th1">Year</th><th data-i18n="supply.th2">Start height</th><th data-i18n="supply.th3">Block subsidy</th><th data-i18n="supply.th4">Cumulative supply</th><th data-i18n="supply.th5">% of cap</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col" data-i18n="supply.th1">Year</th><th scope="col" data-i18n="supply.th2">Start height</th><th scope="col" data-i18n="supply.th3">Block subsidy</th><th scope="col" data-i18n="supply.th4">Cumulative supply</th><th scope="col" data-i18n="supply.th5">% of cap</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -479,7 +484,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   <div class="contract-grid" id="contract-library"></div>
 
   <div class="callout small">
-    <h4 data-i18n="contracts.h41">Authoring covenants</h4>
+    <h3 data-i18n="contracts.h41" class="callout-title">Authoring covenants</h3>
     <p data-i18n="contracts.p4">
       Contracts are assembled from named fragments in <code>src/contracts/lib.ts</code> rather than
       written as raw opcodes — the stack order of <code>SSTORE</code> alone (value, then key) caused
@@ -507,7 +512,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 
   <div class="table-wrap">
     <table class="spec ops">
-      <thead><tr><th data-i18n="dvm.th1">Family</th><th data-i18n="dvm.th2">Opcodes</th><th data-i18n="dvm.th3">Gas</th><th data-i18n="dvm.th4">Notes</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col" data-i18n="dvm.th1">Family</th><th scope="col" data-i18n="dvm.th2">Opcodes</th><th scope="col" data-i18n="dvm.th3">Gas</th><th scope="col" data-i18n="dvm.th4">Notes</th></tr></thead>
       <tbody>
         <tr><td data-i18n="dvm.td1">Arithmetic</td><td><code>ADD MUL SUB DIV MOD EXP</code></td><td data-i18n="dvm.td3">3 – 10 (+50/byte for EXP)</td><td data-i18n="dvm.td4">Wraps at 2²⁵⁶. Division by zero yields zero rather than trapping — same as the EVM.</td></tr>
         <tr><td data-i18n="dvm.td5">Comparison</td><td><code>LT GT EQ ISZERO</code></td><td>3</td><td data-i18n="dvm.td7">Unsigned only. No signed variants in v0.1.</td></tr>
@@ -524,7 +529,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   </div>
 
   <div class="callout small">
-    <h4 data-i18n="dvm.h41">Determinism, stated precisely</h4>
+    <h3 data-i18n="dvm.h41" class="callout-title">Determinism, stated precisely</h3>
     <p data-i18n="dvm.p2">
       Execution is a pure function of <code>(code, calldata, context, storage)</code>. The context
       carries only <code>blockNumber</code>, <code>blockTime</code>, <code>caller</code>,
@@ -554,7 +559,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 
   <div class="table-wrap">
     <table class="spec">
-      <thead><tr><th data-i18n="volt.th1">Lightning concept</th><th>BOLT</th><th data-i18n="volt.th3">Volt implementation</th><th data-i18n="volt.th4">Status</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col" data-i18n="volt.th1">Lightning concept</th><th scope="col">BOLT</th><th scope="col" data-i18n="volt.th3">Volt implementation</th><th scope="col" data-i18n="volt.th4">Status</th></tr></thead>
       <tbody>
         <tr><td data-i18n="volt.td1">Funding output</td><td>BOLT 2</td><td data-i18n="volt.td3">2-of-2 <code>multisig2</code> script; both parties sign the identical sighash. One signature is rejected.</td><td data-i18n="volt.td4" class="done">implemented</td></tr>
         <tr><td data-i18n="volt.td5">Asymmetric commitments</td><td>BOLT 3</td><td data-i18n="volt.td7">Each party holds a commitment where its <em>own</em> output is CSV-delayed 144 blocks and revocable by the counterparty.</td><td data-i18n="volt.td8" class="done">implemented</td></tr>
@@ -574,7 +579,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
   </div>
 
   <div class="callout">
-    <h4 data-i18n="volt.h41">Where Lightning actually stands in 2026</h4>
+    <h3 data-i18n="volt.h41" class="callout-title">Where Lightning actually stands in 2026</h3>
     <ul class="tight">
       <li data-i18n="volt.li1"><strong>Taproot channels</strong> are live — Phoenix shipped full support, cutting roughly 20 % off open/close on-chain fees and making channel transactions indistinguishable from single-sig spends.</li>
       <li data-i18n="volt.li2"><strong>Splicing</strong> was merged into the BOLT specification and enabled by default in Core Lightning during 2026; Eclair has cross-implementation interop and LDK moved splice-out from experimental bit 155 to production bit 63.</li>
@@ -639,7 +644,7 @@ INITIAL_SUBSIDY  = MAX_SUPPLY / (2 × HALVING_INTERVAL)
 
   <div class="table-wrap">
     <table class="spec">
-      <thead><tr><th data-i18n="network.th1">Concern</th><th data-i18n="network.th2">Approach</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col" data-i18n="network.th1">Concern</th><th scope="col" data-i18n="network.th2">Approach</th></tr></thead>
       <tbody>
         <tr>
           <td data-i18n="network.td1">Durability</td>
@@ -716,7 +721,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
   </div>
 
   <div class="callout small">
-    <h4 data-i18n="network.h41">Convergence is measured on the state root, not the tip hash</h4>
+    <h3 data-i18n="network.h41" class="callout-title">Convergence is measured on the state root, not the tip hash</h3>
     <p data-i18n="network.p4">
       Two nodes can agree on which block is the tip while disagreeing about the UTXO set underneath
       it — and that node forks off the network three blocks later, for reasons that look unrelated.
@@ -764,7 +769,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 
   <div class="table-wrap">
     <table class="spec">
-      <thead><tr><th data-i18n="wallet.th1">Concern</th><th data-i18n="wallet.th2">Approach</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col" data-i18n="wallet.th1">Concern</th><th scope="col" data-i18n="wallet.th2">Approach</th></tr></thead>
       <tbody>
         <tr>
           <td data-i18n="wallet.td1">A seed a human can write down</td>
@@ -826,24 +831,24 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 
   <div class="explorer-grid" id="explorer-summary"></div>
 
-  <h3 data-i18n="explorer.h31" class="sub-head">Scenario timeline</h3>
+  <h3 data-i18n="explorer.h31" class="sub-head" data-scenario>Scenario timeline</h3>
   <p data-i18n="explorer.p2" class="sub-note">Twelve steps, executed in order against a live chain with real proof of work.</p>
   <ol class="timeline" id="timeline"></ol>
 
-  <h3 data-i18n="explorer.h32" class="sub-head">Genesis block</h3>
+  <h3 data-i18n="explorer.h32" class="sub-head" data-scenario>Genesis block</h3>
   <div class="kv-grid" id="genesis-detail"></div>
 
   <h3 data-i18n="explorer.h33" class="sub-head">Notable blocks</h3>
   <p data-i18n="explorer.p3" class="sub-note">Blocks carrying more than a lone coinbase. Click to expand transactions.</p>
   <div id="block-list" class="block-list"></div>
 
-  <h3 data-i18n="explorer.h34" class="sub-head">Deployed contract</h3>
+  <h3 data-i18n="explorer.h34" class="sub-head" data-scenario>Deployed contract</h3>
   <div class="kv-grid" id="contract-detail"></div>
 
-  <h3 data-i18n="explorer.h35" class="sub-head">Volt channels</h3>
+  <h3 data-i18n="explorer.h35" class="sub-head" data-scenario>Volt channels</h3>
   <div id="channel-list" class="channel-list"></div>
 
-  <h3 data-i18n="explorer.h36" class="sub-head">The routed payment</h3>
+  <h3 data-i18n="explorer.h36" class="sub-head" data-scenario>The routed payment</h3>
   <div id="payment-detail" class="payment-detail"></div>
 </section>
 
@@ -893,7 +898,7 @@ node scripts/testnet.ts --nodes 3 --interval 5</code></pre>
 cd deckxcoin/chain
 npm install
 
-npm test              <span class="c"># 313 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
+npm test              <span class="c"># 331 tests — crypto, consensus, VM, covenants, Volt, P2P, wallet</span>
 node src/cli.ts genesis    <span class="c"># mine and verify the genesis block</span>
 node src/cli.ts verify     <span class="c"># prove genesis is reproducible</span>
 node src/cli.ts volt       <span class="c"># routed off-chain payment across two channels</span>
@@ -930,7 +935,7 @@ node src/cli.ts scenario   <span class="c"># the full 12-step reference run (~2.
 
   <div class="table-wrap">
     <table class="spec">
-      <thead><tr><th data-i18n="audit.th1">Area</th><th data-i18n="audit.th2">Status</th><th data-i18n="audit.th3">What is missing</th></tr></thead>
+      <th scope="col"ead><tr><th scope="col" data-i18n="audit.th1">Area</th><th scope="col" data-i18n="audit.th2">Status</th><th scope="col" data-i18n="audit.th3">What is missing</th></tr></thead>
       <tbody>
         <tr><td data-i18n="audit.td1">P2P networking</td><td data-i18n="audit.td2" class="todo">implemented</td><td data-i18n="audit.td3">Framed wire protocol over TCP, encrypted and identity-bound, with gossip, headers-first sync, compact block relay and mempool exchange. No DNS seeds are configured, because there are no public nodes to list yet, and no NAT traversal — an inbound-reachable node needs a forwarded port.</td></tr>
         <tr><td data-i18n="audit.td4">Reorg handling</td><td data-i18n="audit.td5" class="partial">implemented</td><td data-i18n="audit.td6">Undo records per block, most-work fork choice, losing branches retained, and the restored state root checked against the parent's committed root. A reorg deeper than the undo window is refused rather than attempted with missing data.</td></tr>

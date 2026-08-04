@@ -229,6 +229,61 @@ export function isValidAddress(address: string): boolean {
 }
 
 /**
+ * The one encoding of an address that consensus accepts.
+ *
+ * ── Why this exists ───────────────────────────────────────────────────────
+ * bech32 is case-insensitive: `dxc1q…` and `DXC1Q…` decode to the same 20-byte
+ * hash and are the same address to a human. But this chain stores addresses as
+ * *strings* — they are the keys of the UTXO set and they are committed to by
+ * the state root — so two spellings of one address are two different keys.
+ *
+ * The consequence, before this was enforced, was quiet and expensive: a payment
+ * to the uppercase form was accepted by consensus and stored under that string,
+ * while the recipient's wallet derived the lowercase form and reported a
+ * balance of zero. The coins were still spendable by the same key, but nothing
+ * in the system would ever show them, and the owner had no way to know they had
+ * arrived.
+ *
+ * It is also a consensus-split hazard: a second implementation that normalised
+ * on the way in would compute a different state root from one that did not, and
+ * the two would fork with no invalid block to point at.
+ *
+ * So `decodeAddress` stays permissive — uppercase is legal bech32 and is what a
+ * QR code carries — and *validation* insists on the canonical form. Uppercase is
+ * something a user may type; it is not something a transaction may contain.
+ */
+export function canonicalAddress(address: string): string {
+  const { version, hash } = decodeAddress(address);
+  return addressFromHash160(hash, version);
+}
+
+/** True when `address` is valid *and* spelled the only way consensus allows. */
+export function isCanonicalAddress(address: string): boolean {
+  try {
+    return canonicalAddress(address) === address;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Normalise user input to the canonical spelling.
+ *
+ * For the boundary where a person pastes an address — a wallet's send field, a
+ * faucet form, an RPC parameter. Returns the input unchanged when it cannot be
+ * decoded, so the caller's own validation produces the error message rather
+ * than this throwing first.
+ */
+export function normaliseAddress(address: string): string {
+  const trimmed = (address ?? '').trim();
+  try {
+    return canonicalAddress(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
+/**
  * Contract addresses follow Ethereum's CREATE rule in spirit: deterministic
  * from (deployer, nonce), so a deployer can compute the address before the
  * transaction is mined. Rendered in the same bech32m format as user addresses

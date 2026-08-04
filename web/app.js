@@ -297,7 +297,7 @@ function txNode(tx) {
   const io = el('div', 'io');
 
   const inCol = el('div', 'io-col');
-  inCol.appendChild(el('h5', null, `inputs (${tx.inputs.length})`));
+  inCol.appendChild(el('h4', 'io-head', `inputs (${tx.inputs.length})`));
   if (tx.inputs.length === 0) {
     inCol.appendChild(el('div', 'io-row', 'none — coinbase creates value'));
   } else {
@@ -317,7 +317,7 @@ function txNode(tx) {
   }
 
   const outCol = el('div', 'io-col');
-  outCol.appendChild(el('h5', null, `outputs (${tx.outputs.length})`));
+  outCol.appendChild(el('h4', 'io-head', `outputs (${tx.outputs.length})`));
   for (const o of tx.outputs) {
     const row = el('div', 'io-row');
     row.appendChild(el('span', 'io-val', deckx(o.value)));
@@ -543,18 +543,65 @@ async function boot() {
 
 /* ── interactions ─────────────────────────────────────────────────── */
 
+/*
+ * One shared live region for transient confirmations.
+ *
+ * A button whose label flips to "copied ✓" tells a sighted user it worked and
+ * tells a screen-reader user nothing — the label of the element you just
+ * activated is not re-announced. Announcing through a separate polite region
+ * is what makes the confirmation exist for everybody.
+ */
+const announcer = (() => {
+  const node = el('div', 'sr-only');
+  node.setAttribute('role', 'status');
+  node.setAttribute('aria-live', 'polite');
+  document.body.appendChild(node);
+  return (message) => {
+    // Cleared first: setting the same string twice in a row is not a change,
+    // and an unchanged live region is not announced.
+    node.textContent = '';
+    setTimeout(() => { node.textContent = message; }, 40);
+  };
+})();
+
+/** The button's resting label, in whatever language is showing now. */
+function copyLabel(button) {
+  const key = button.getAttribute('data-i18n');
+  if (key && window.i18n) return window.i18n.t(key, 'copy');
+  return 'copy';
+}
+
+/** Ctrl on everything that is not a Mac. Telling a Windows user ⌘C is noise. */
+const COPY_SHORTCUT = /mac|iphone|ipad/i.test(navigator.platform || navigator.userAgent)
+  ? '⌘C'
+  : 'Ctrl+C';
+
 document.addEventListener('click', (e) => {
   const copy = e.target.closest('.copy-btn');
   if (copy) {
     const src = document.querySelector(copy.dataset.copy);
     if (!src) return;
+
+    const settle = (text, announcement) => {
+      copy.textContent = text;
+      announcer(announcement);
+      /*
+       * The resting label is re-read at restore time rather than captured
+       * before the change: switching language during the 1.4 s window would
+       * otherwise put back the previous language's word. The data-i18n guard
+       * stops the translator overwriting the confirmation in the meantime.
+       */
+      copy.setAttribute('data-i18n-dynamic', '');
+      clearTimeout(copy._restore);
+      copy._restore = setTimeout(() => {
+        copy.removeAttribute('data-i18n-dynamic');
+        copy.textContent = copyLabel(copy);
+      }, 1400);
+    };
+
     navigator.clipboard.writeText(src.textContent.trim()).then(
-      () => {
-        const original = copy.textContent;
-        copy.textContent = 'copied ✓';
-        setTimeout(() => { copy.textContent = original; }, 1400);
-      },
-      () => { copy.textContent = 'press ⌘C'; },
+      () => settle('copied ✓', 'Copied to clipboard'),
+      () => settle(COPY_SHORTCUT, `Could not copy — select the text and press ${COPY_SHORTCUT}`),
     );
     return;
   }
@@ -569,7 +616,23 @@ document.addEventListener('click', (e) => {
 
   if (e.target.closest('.topnav a')) {
     document.querySelector('.topnav').classList.remove('open');
+    document.querySelector('.menu-toggle')?.setAttribute('aria-expanded', 'false');
   }
+});
+
+/*
+ * Escape closes the mobile menu and returns focus to the control that opened
+ * it. Without this a keyboard user who opens the menu has no way back out
+ * except tabbing through every link in it.
+ */
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const nav = document.querySelector('.topnav');
+  if (!nav?.classList.contains('open')) return;
+  nav.classList.remove('open');
+  const toggle = document.querySelector('.menu-toggle');
+  toggle?.setAttribute('aria-expanded', 'false');
+  toggle?.focus();
 });
 
 boot();

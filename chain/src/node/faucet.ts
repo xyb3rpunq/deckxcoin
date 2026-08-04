@@ -44,7 +44,7 @@
  * is a small `amount` and a refill process, not cleverer heuristics.
  */
 
-import { isValidAddress, type Hex } from '../crypto.ts';
+import { isValidAddress, isCanonicalAddress, normaliseAddress, type Hex } from '../crypto.ts';
 import { formatDeckx, txid, type Transaction } from '../tx.ts';
 import type { Wallet } from '../wallet/wallet.ts';
 import type { WorldState } from '../state.ts';
@@ -253,13 +253,22 @@ export function judgeRequest(
   ledger: FaucetLedger,
   policy: FaucetPolicy,
 ): Judgement {
-  const { address, client, now, spendable } = input;
+  const { client, now, spendable } = input;
+
+  /*
+   * The ledger is keyed by address string, and bech32 is case-insensitive — so
+   * without normalising, `dxc1q…` and `DXC1Q…` are two keys for one address and
+   * the per-address cooldown is bypassed by pressing shift. Callers are
+   * expected to normalise too, but this is the function that enforces the
+   * limits, so it does not depend on them having done so.
+   */
+  const address = normaliseAddress(input.address);
 
   if (!isValidAddress(address)) {
     return {
       verdict: FAUCET_VERDICT.INVALID_ADDRESS,
       allowed: false,
-      reason: `'${address}' is not a valid DeckxCoin address`,
+      reason: `'${input.address}' is not a valid DeckxCoin address`,
     };
   }
 
@@ -442,7 +451,10 @@ export class Faucet {
     return run;
   }
 
-  async #serve(address: string, remote: string): Promise<FaucetResult> {
+  async #serve(requested: string, remote: string): Promise<FaucetResult> {
+    // Normalised once, here, so the ledger entry, the payment and the cooldown
+    // all refer to the same string.
+    const address = normaliseAddress(requested);
     const client = clientKey(remote);
     const now = this.#now();
     const { state, height, time } = this.#chain();

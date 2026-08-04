@@ -206,6 +206,55 @@ export interface GatewayOptions {
   readonly now?: () => number;
   /** Requests per minute per client. */
   readonly ratePerMinute?: number;
+  /**
+   * How many reverse proxies sit in front of this gateway. Default 0 — none.
+   *
+   * See {@link clientAddress} for why this is off unless stated, and why
+   * getting it wrong in either direction breaks the limits.
+   */
+  readonly trustProxy?: number;
+}
+
+/**
+ * The address to rate-limit, given a connection and its headers.
+ *
+ * ── Why this is not just `socket.remoteAddress` ───────────────────────────
+ * The deployment this gateway is written for puts nginx or Caddy in front to
+ * terminate TLS. Behind one, every request arrives from `127.0.0.1`, so a
+ * single bucket serves the entire internet: one script exhausts it and every
+ * real visitor is refused. The faucet is worse than that — its per-IP cooldown
+ * collapses into one global cooldown, so the first person to ask locks out
+ * everybody else for half an hour. A limit that punishes the wrong people is
+ * worse than no limit.
+ *
+ * ── Why it is not just `X-Forwarded-For` either ───────────────────────────
+ * The header is client-supplied. Trusting it unconditionally means anyone can
+ * send a fresh value per request and defeat every limit here at zero cost —
+ * which is the same failure, reached from the opposite direction.
+ *
+ * So the operator states how many proxies they run, and the address is taken
+ * that many hops from the right. Entries to the left of that are whatever the
+ * client claimed and are ignored. With no proxies configured — the default —
+ * the header is not read at all.
+ */
+export function clientAddress(
+  remote: string,
+  forwardedFor: string | undefined,
+  trustProxy: number,
+): string {
+  if (trustProxy <= 0 || !forwardedFor) return clientKey(remote);
+
+  const chain = forwardedFor
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (chain.length === 0) return clientKey(remote);
+
+  // The right-most entry was appended by the proxy nearest to us and is the
+  // only one it observed directly. Each further hop back is one more proxy the
+  // operator says they run.
+  const index = Math.max(0, chain.length - trustProxy);
+  return clientKey(chain[index]);
 }
 
 export interface GatewayResponse {
@@ -222,11 +271,13 @@ export class Gateway {
   readonly cors: string;
   readonly port: number;
   readonly host: string;
+  readonly trustProxy: number;
   readonly #call: GatewayOptions['call'];
   readonly #now: () => number;
   #server?: Server;
   #requests = 0;
   #refused = 0;
+  #warnedAboutProxy = false;
 
   constructor(opts: GatewayOptions) {
     this.#call = opts.call;
@@ -236,7 +287,34 @@ export class Gateway {
     this.cors = opts.cors ?? '*';
     this.cache = opts.cache ?? new ResponseCache();
     this.limiter = opts.limiter ?? new RateLimiter(60, opts.ratePerMinute ?? 60);
+    this.trustProxy = Math.max(0, Math.floor(opts.trustProxy ?? 0));
     this.#now = opts.now ?? Date.now;
+  }
+
+  /**
+   * Resolve the client for one request, and complain once if the deployment
+   * looks misconfigured.
+   *
+   * An `X-Forwarded-For` arriving while no proxy is configured means one of two
+   * things: a reverse proxy the operator forgot to declare — in which case every
+   * limit here is now a single global bucket — or a client trying to forge its
+   * address. Both are worth exactly one line in the log; repeating it per
+   * request would just fill the disk.
+   */
+  #clientFor(req: IncomingMessage): string {
+    const forwarded = req.headers['x-forwarded-for'];
+    const header = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+
+    if (header && this.trustProxy === 0 && !this.#warnedAboutProxy) {
+      this.#warnedAboutProxy = true;
+      console.warn(
+        'gateway: saw X-Forwarded-For but --gateway-trust-proxy is 0, so it is ignored. ' +
+          'If this gateway is behind a reverse proxy, set it — otherwise every client ' +
+          'shares one rate-limit bucket and the faucet serves one person per cooldown.',
+      );
+    }
+
+    return clientAddress(req.socket.remoteAddress ?? '', header, this.trustProxy);
   }
 
   /**
@@ -344,7 +422,7 @@ export class Gateway {
     }
 
     const url = new URL(req.url ?? '/', 'http://gateway');
-    const client = clientKey(req.socket.remoteAddress ?? '');
+    const client = this.#clientFor(req);
 
     // Health, for the reverse proxy and for uptime checks.
     if (url.pathname === '/health') {
@@ -426,7 +504,7 @@ function coerce(params: Record<string, unknown>): Record<string, unknown> {
     }
     if (v === 'true') out[k] = true;
     else if (v === 'false') out[k] = false;
-    else if (/^\d+$/.test(v)) out[k] = Number(v);
+    else if (/^\d+$/.test(v) && String(Number(v)) === v) out[k] = Number(v);
     else out[k] = v;
   }
   return out;

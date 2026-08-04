@@ -15,8 +15,18 @@
 
   --text:      #cdd6e4;
   --text-hi:   #f2f6fc;
-  --dim:       #7c8aa0;
-  --dimmer:    #55627a;
+  /*
+   * Both muted tiers were raised for contrast. --dimmer was #55627a, which is
+   * 2.99:1 on --panel-2 — below WCAG AA even for large text, and it is used for
+   * roughly twenty things that are all 10–13px: stat labels, key names, code
+   * comments, the live-status detail line. Small text is where contrast matters
+   * most, so that was the worst possible place to be short.
+   *
+   * --dim moved with it. Lifting only --dimmer would have left the two tiers
+   * almost the same colour and collapsed a hierarchy the layout depends on.
+   */
+  --dim:       #9aa7bd;  /* 8.33:1 on bg */
+  --dimmer:    #70809c;  /* 4.60:1 on the darkest panel — AA for body text */
 
   --rekt:      #ff2d55;
   --rekt-soft: #ff6b86;
@@ -335,7 +345,11 @@ table.params td:nth-child(2) { width: 220px; }
   border-left: 3px solid var(--cyan); border-radius: 0 var(--radius) var(--radius) 0;
 }
 .callout.small { border-left-color: var(--violet); }
-.callout h4 { margin: 0 0 12px; font-size: 16px; color: var(--text-hi); }
+/* Was `.callout h4`. These are h3 now: they sit directly under a section's h2,
+   and starting at h4 made a screen reader announce a level that skips one —
+   which reads as a missing subsection. The size is unchanged; only the outline
+   level moved. */
+.callout .callout-title { margin: 0 0 12px; font-size: 16px; color: var(--text-hi); }
 .callout p { margin: 0 0 12px; font-size: 15px; }
 .callout p:last-child { margin-bottom: 0; }
 ul.tight { margin: 0 0 14px; padding-left: 20px; }
@@ -559,7 +573,7 @@ details.block summary::-webkit-details-marker { display: none; }
 .tx-id { font-family: var(--mono); font-size: 11.5px; color: var(--dim); word-break: break-all; }
 .tx-memo { font-size: 13px; color: var(--dim); font-style: italic; margin: 6px 0 8px; }
 .io { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 8px; }
-.io-col h5 {
+.io-col .io-head {
   font-family: var(--mono); font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase;
   color: var(--dimmer); margin: 0 0 7px;
 }
@@ -713,3 +727,63 @@ details.block summary::-webkit-details-marker { display: none; }
 .faucet-result { margin: 12px 0 0; font-family: var(--mono); font-size: 12.5px; color: var(--dim); }
 .faucet-result[data-tone="good"] { color: var(--acid); }
 .faucet-result[data-tone="bad"] { color: var(--rekt); }
+
+/* ── keyboard access ──────────────────────────────────────────────── */
+
+/*
+ * One focus ring, everywhere.
+ *
+ * The browser default is a thin dark outline, which on a #05060a background is
+ * effectively invisible — and the rules above that highlight on :focus-visible
+ * only change colour, which is indistinguishable from a mouse hover. A keyboard
+ * user could not tell where they were.
+ *
+ * :focus-visible rather than :focus, so a mouse click does not leave a ring
+ * behind on everything it touches.
+ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--acid);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/*
+ * Off-screen until focused, then pinned to the top-left where it is expected.
+ *
+ * `fixed`, not `absolute`. Absolute positions it at the top of the *document*,
+ * so a reader who has scrolled and then tabs to it focuses something they
+ * cannot see — the page appears to swallow their keypress. Fixed puts it in the
+ * viewport wherever they happen to be.
+ */
+.skip-link {
+  position: fixed; top: -100px; left: 12px; z-index: 100;
+  padding: 10px 16px; border-radius: 0 0 8px 8px;
+  background: var(--acid); color: var(--bg);
+  font-family: var(--mono); font-size: 13px; font-weight: 600;
+  text-decoration: none;
+  transition: top .12s ease-out;
+}
+.skip-link:focus { top: 0; }
+
+/* The scanlines and grid sit at z-index 1 and would otherwise draw over the
+   ring on anything inside them. */
+.lang-switch:focus-within, .topbar:focus-within { position: relative; z-index: 60; }
+
+/* Visible to assistive technology, not to the eye. Clipped rather than
+   display:none, because a hidden element is not announced at all. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  clip: rect(0 0 0 0); clip-path: inset(50%);
+  overflow: hidden; white-space: nowrap;
+}
+
+/* Sits beside a subsection heading while a live node is connected, to say that
+   this particular block of numbers is still the bundled scenario. */
+.scenario-tag {
+  margin-left: 10px; padding: 2px 8px;
+  font-family: var(--mono); font-size: 10px; font-weight: 400;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--dimmer); border: 1px solid var(--border-hi); border-radius: 4px;
+  vertical-align: middle; white-space: nowrap;
+}

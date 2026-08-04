@@ -31,7 +31,7 @@ import { Faucet, FaucetLedger, DEFAULT_POLICY } from './node/faucet.ts';
 import { HdWallet, generateMnemonic } from './wallet/hd.ts';
 import { Wallet } from './wallet/wallet.ts';
 import { networkByName } from './params.ts';
-import { isValidAddress } from './crypto.ts';
+import { isValidAddress, normaliseAddress } from './crypto.ts';
 import { formatDeckx, ZAPS_PER_DECKX } from './tx.ts';
 
 interface Args {
@@ -86,7 +86,11 @@ async function main(): Promise<number> {
   const rpcPort = args.number('rpcport', params.defaultRpcPort);
   const quiet = args.has('quiet');
 
-  const mineTo = args.one('mine');
+  // Normalised: consensus only accepts the canonical spelling, so an
+  // uppercase address from a QR code would otherwise make every mined block
+  // invalid with no hint as to why.
+  const mineToRaw = args.one('mine');
+  const mineTo = mineToRaw ? normaliseAddress(mineToRaw) : undefined;
   if (mineTo && !isValidAddress(mineTo)) {
     console.error(red(`--mine '${mineTo}' is not a valid DeckxCoin address`));
     return 2;
@@ -178,6 +182,7 @@ async function main(): Promise<number> {
       port: args.number('gateway-port', 8080),
       host: args.one('gateway-host', '0.0.0.0'),
       ratePerMinute: args.number('gateway-rate', 60),
+      trustProxy: args.number('gateway-trust-proxy', 0),
       faucet,
     });
   }
@@ -347,6 +352,11 @@ cached and rate-limited; the RPC above stays on loopback.
   --gateway-port <n>     listen port                      (default 8080)
   --gateway-host <addr>  bind address                     (default 0.0.0.0)
   --gateway-rate <n>     requests per minute per client   (default 60)
+  --gateway-trust-proxy <n>  how many reverse proxies sit in front (default 0).
+                         Set it if you run nginx/Caddy for TLS — otherwise every
+                         client shares one bucket and the faucet serves one
+                         person per cooldown. Leave it 0 if you do not, or
+                         anyone can forge their address with a header.
 
 Faucet — refuses to run on mainnet.
 

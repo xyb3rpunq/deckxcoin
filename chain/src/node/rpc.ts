@@ -22,7 +22,7 @@ import type { DeckxNode } from './node.ts';
 import { ACCEPT } from './chainstate.ts';
 import { formatDeckx, txid, type Transaction } from '../tx.ts';
 import { blockHash, blockSubsidy, cumulativeIssuance, type Block } from '../block.ts';
-import { isValidAddress, type Hex } from '../crypto.ts';
+import { isValidAddress, normaliseAddress, type Hex } from '../crypto.ts';
 import { isHash } from '../net/wire.ts';
 
 export interface RpcOptions {
@@ -223,7 +223,7 @@ export class RpcServer {
       }
 
       case 'getbalance': {
-        const address = String(params.address ?? '');
+        const address = normaliseAddress(String(params.address ?? ''));
         if (!isValidAddress(address)) throw invalid(`'${address}' is not a valid DeckxCoin address`);
         const balance = chain.state.balanceOf(address);
         return {
@@ -235,7 +235,7 @@ export class RpcServer {
       }
 
       case 'listunspent': {
-        const address = String(params.address ?? '');
+        const address = normaliseAddress(String(params.address ?? ''));
         if (!isValidAddress(address)) throw invalid(`'${address}' is not a valid DeckxCoin address`);
         return chain.state.utxosFor(address).map((u) => ({
           txid: u.txid,
@@ -285,7 +285,10 @@ export class RpcServer {
 
       case 'generate': {
         const count = Number(params.count ?? 1);
-        const address = String(params.address ?? '');
+        // Normalised before mining: a coinbase paying a non-canonical address
+        // is rejected by consensus, so mining to one would fail every block
+        // with an error pointing at the block rather than at the typo.
+        const address = normaliseAddress(String(params.address ?? ''));
         if (!Number.isInteger(count) || count < 1 || count > 1000) {
           throw invalid('count must be an integer between 1 and 1000');
         }
